@@ -27,7 +27,7 @@ typedef struct ProcessQueue{
 typedef struct ProcessQueueDescriptor{
     ProcessQueue *head;
     ProcessQueue *tail;
-}
+} ProcessQueueDescriptor;
 
 // HEADERS
 Process* createProcesses();
