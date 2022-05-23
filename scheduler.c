@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 // CONSTANTES
 #define MAX_PROCESSES 10
 #define TIME_SLICE 4
@@ -11,12 +15,14 @@ typedef struct Process{
     int pid;
     int priority;
     int startTime;
-    int duration;
+    int remainingTime;
 } Process;
 
 typedef struct Device{
     Process *actualProcess;
     int remainingTime;
+    int duration;
+    char name[16];
 } Device;
 
 typedef struct ProcessQueue{
@@ -30,78 +36,108 @@ typedef struct ProcessQueueDescriptor{
 } ProcessQueueDescriptor;
 
 // HEADERS
-Process* createProcesses();
-Device* createDevice(int time);
-void executeProcess(Device *device, ProcessQueue *inputQueue, ProcessQueue *returnQueue, int time);
-void addQueue(ProcessQueueDescriptor *queue, Process *process);
-Process* removeQueue(ProcessQueueDescriptor *queue);
-void newProcess(int quantum, ProcessQueueDescriptor *queue);
-int isEmpty();
 
 int main(){
-    Process *processes = createProcesses();
+    int numProcesses;
+    Process *processes = createProcesses(&numProcesses);
 
-    Device *cpu = createDevice(TIME_SLICE);
-    Device *disk = createDevice(DISK_TIMER);
-    Device *tape = createDevice(TAPE_TIMER);
-    Device *printer = createDevice(PRINTER_TIME);
+    Device *cpu = createDevice(TIME_SLICE, "CPU");
+    Device *disk = createDevice(DISK_TIMER, "Disco");
+    Device *tape = createDevice(TAPE_TIMER, "Fita");
+    Device *printer = createDevice(PRINTER_TIME, "Impressora");
 
-    ProcessQueueDescriptor *highPriority = (ProcessQueueDescriptor *)malloc(sizeof(ProcessQueueDescriptor));
-    highPriority->head = highPriority->tail = NULL;
+    ProcessQueueDescriptor *highPriority = createQueue();
+    ProcessQueueDescriptor *lowPriority = createQueue();
+    ProcessQueueDescriptor *diskQueue = createQueue();
+    ProcessQueueDescriptor *tapeQueue = createQueue();
+    ProcessQueueDescriptor *printerQueue = createQueue();
 
-    ProcessQueueDescriptor *lowPriority = (ProcessQueueDescriptor *)malloc(sizeof(ProcessQueueDescriptor));
-    lowPriority->head = lowPriority->tail = NULL;
+    for(int quantum = 0; numProcesses; quantum++){
+        printf("=== Começando instante %d ===\n", quantum);
 
-    ProcessQueueDescriptor *diskQueue = (ProcessQueueDescriptor *)malloc(sizeof(ProcessQueueDescriptor));
-    diskQueue->head = diskQueue->tail = NULL;
-
-    ProcessQueueDescriptor *tapeQueue = (ProcessQueueDescriptor *)malloc(sizeof(ProcessQueueDescriptor));
-    tapeQueue->head = tapeQueue->tail = NULL;
-
-    ProcessQueueDescriptor *printerQueue = (ProcessQueueDescriptor *)malloc(sizeof(ProcessQueueDescriptor));
-    printerQueue->head = printerQueue->tail = NULL;
-
-    int isOver = 0;
-
-    for(int quantum = 0; !isOver; quantum++){
         newProcess(quantum, highPriority);
-        executeProcess(disk, diskQueue, lowPriority, DISK_TIMER);
-        executeProcess(tape, tapeQueue, highPriority, TAPE_TIMER);
-        executeProcess(printer, printerQueue, highPriority, PRINTER_TIME);
-        executeProcess(cpu, highPriority, lowPriority, TIME_SLICE);
-        if(!cpu->actualProcess) executeProcess(cpu, lowPriority, lowPriority, TIME_SLICE);
+
+        executeDevice(disk);
+        executeDevice(tape);
+        executeDevice(printer);
+        executeDevice(cpu);
+
+        Process *actualProcess = cpu->actualProcess;
+        if(actualProcess){
+            int remainingTime = actualProcess->remainingTime--;
+            if(remainingTime == 0){
+                killProcess(actualProcess);
+            }
+        }
+
+        checkDeviceEnd(disk, lowPriority);
+        checkDeviceEnd(tape, highPriority);
+        checkDeviceEnd(printer, highPriority);
+        checkDeviceEnd(cpu, lowPriority);
+
+        checkDeviceStart(disk, diskQueue);
+        checkDeviceStart(tape, tapeQueue);
+        checkDeviceStart(printer, printerQueue);
+        checkDeviceStart(cpu, highPriority);
+        checkDeviceStart(cpu, lowPriority);
         
-        isOver = !processes && !cpu->actualProcess && !disk->actualProcess && !tape->actualProcess && !printer->actualProcess;
+        printf("\n\n");
     }
     return 0;
 }
 
-Process* createProcesses(){
+Process* createProcesses(int *numProcesses){
+    *numProcesses = 0;
+
     return NULL;
 }
 
-Device* createDevice(int time){
+Device* createDevice(int time, char *name){
     Device *device = (Device *)malloc(sizeof(Device));
-    device->remainingTime = time;
-    device->process = NULL;
+    device->remainingTime = device->duration = time;
+    device->actualProcess = NULL;
+    strcpy(device->name, name);
+
     return device;
 }
 
-void executeProcess(Device *device, ProcessQueue *inputQueue, ProcessQueue *returnQueue, int time){
-    if(device->process){
+ProcessQueueDescriptor* createQueue(){
+    ProcessQueueDescriptor* queue = (ProcessQueueDescriptor *)malloc(sizeof(ProcessQueueDescriptor));
+    queue->head = queue->tail = NULL;
+
+    return queue;
+}
+
+void executeDevice(Device *device){
+    if(device->actualProcess){
         device->remainingTime--; 
     }
+}
+
+void checkDeviceEnd(Device *device, ProcessQueue *returnQueue){
+    if(!device->actualProcess) return;
+
     if(device->remainingTime == 0){
         addQueue(returnQueue, device->actualProcess);
-        device->process = removeQueue(inputQueue);
-        if(device->process) remainingTime = time;
+        printf("- Processo %d saiu do dispositivo %s\n", device->actualProcess->pid, device->name);
+        device->actualProcess = NULL;
     }
 }
+
+void checkDeviceStart(Device *device, ProcessQueue *inputQueue){
+    if(device->actualProcess) return;
+
+    device->actualProcess = removeQueue(inputQueue);
+    device->remainingTime = device->duration;
+
+    if(device->actualProcess) 
+        printf("+ Processo %d entrou no dispositivo %s\n", device->actualProcess->pid, device->name);
+}    
 
 void addQueue(ProcessQueueDescriptor *queue, Process *process){
     if(!process) return;
 
-    ProcessQueue processQueue = (ProcessQueue *)malloc(sizeof(ProcessQueue));
+    ProcessQueue *processQueue = (ProcessQueue *)malloc(sizeof(ProcessQueue));
     processQueue->process = process; 
     processQueue->next = NULL;
 
@@ -120,9 +156,16 @@ Process* removeQueue(ProcessQueueDescriptor *queue){
     free(queue->head);
     queue->head = newHead;
 
+    if(!queue->head) queue->tail = NULL;
+
     return process;
 }
 
 void newProcess(int quantum, ProcessQueueDescriptor *queue){
-    
+    // print(Processo criado);
+}
+
+void killProcess(Process *process){
+    printf("X Processo %d foi finalizado\n", process->pid);
+    free(process);
 }
