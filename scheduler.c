@@ -4,11 +4,6 @@
 
 /* Constants */
 #define MAX_PROCESSES 10
-#define TIME_SLICE 4
-
-#define DISK_TIMER 5
-#define TAPE_TIMER 8
-#define PRINTER_TIME 10
 
 /* Headers */
 typedef struct Process Process;
@@ -69,7 +64,17 @@ struct IOQueueElement{
     int initialTime;
 };
 
-int main(){
+int main(int argc, char *argv[]) {
+    if (argc < 5) {
+        printf("Execute o programa colocando os tempos de serviço e de I/O\n");
+        printf("./%s <quantum> <Disco> <Fita> <Impressora>", argv[0]);
+        return -1;
+    }
+    const int TIME_SLICE = atoi(argv[1]);
+    const int DISK_TIMER = atoi(argv[2]);
+    const int TAPE_TIMER = atoi(argv[3]);
+    const int PRINTER_TIME = atoi(argv[4]);
+
     showMenu();
     Device *cpu = createDevice(TIME_SLICE, "CPU");
     Device *disk = createDevice(DISK_TIMER, "Disco");
