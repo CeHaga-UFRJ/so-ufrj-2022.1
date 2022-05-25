@@ -38,7 +38,10 @@ struct Process{
     int priority;
 
     int startTime;
+    int processedTime;
     int remainingTime;
+
+    int numIO;
     IOQueueElement *IO;
 };
 
@@ -104,7 +107,14 @@ int main(int argc, char *argv[]) {
         Process *actualProcess = cpu->actualProcess;
         if(actualProcess){
             int remainingTime = actualProcess->remainingTime--;
-            // IO
+            int processedTime = actualProcess->processedTime--;
+            
+            if (actualProcess->IO->initialTime == processedTime) {
+                ProcessQueueDescriptor *device = actualProcess->IO->deviceQueue;
+                actualProcess->IO = (actualProcess->IO)+1;
+                addQueue(device, removeQueue(cpu));
+            }
+
             if(remainingTime == 0){
                 killProcess(actualProcess);
                 numProcesses--;
@@ -238,7 +248,7 @@ ProcessQueueDescriptor* createQueue(){
 
 void executeDevice(Device *device){
     if(device->actualProcess){
-        device->remainingTime--; 
+        device->remainingTime--;
     }
 }
 
