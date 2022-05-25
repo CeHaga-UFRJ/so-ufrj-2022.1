@@ -27,6 +27,11 @@ void addQueue(ProcessQueueDescriptor *queue, Process *process);
 Process* removeQueue(ProcessQueueDescriptor *queue);
 void newProcess(int instant, ProcessQueueDescriptor *queue);
 void killProcess(Process *process);
+void showMenu();
+void readProcessesFromFile();
+void readProcessesFromKeyboard();
+void createRandomProcesses();
+char* trim(char* str);
 
 
 /* Data structures */
@@ -65,6 +70,7 @@ struct IOQueueElement{
 };
 
 int main(){
+    showMenu();
     Device *cpu = createDevice(TIME_SLICE, "CPU");
     Device *disk = createDevice(DISK_TIMER, "Disco");
     Device *tape = createDevice(TAPE_TIMER, "Fita");
@@ -114,6 +120,86 @@ int main(){
         printf("\n\n");
     }
     return 0;
+}
+
+void showMenu() {
+    int choice;
+
+    printf("Ola usuario! Como voce gostaria de realizar a criacao dos processos? \n 1 - Ler do arquivo input.txt \n 2 - Ler do teclado \n 3 - Criar processos com numeros aleatorios \n");
+    scanf("%i", &choice);
+
+    switch (choice) {
+        case 1:
+            readProcessesFromFile();
+            break;
+        case 2:
+            readProcessesFromKeyboard();
+            break;
+        case 3:
+            createRandomProcesses();
+            break;
+        default:
+            printf("Opcao invalida. Escolha uma das seguintes opcoes: 1, 2 ou 3.");
+    }
+}
+
+void readProcessesFromFile() {
+    const char* filename = "input.txt";
+    FILE* ptr;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+ 
+    ptr = fopen(filename, "r");
+
+    if (NULL == ptr) {
+        printf("Falha ao abrir o arquivo de input \n");
+    }
+
+    while ((read = getline(&line, &len, ptr)) != -1) {
+        printf("%s", line);
+
+        char *pt = strtok(line, ",");
+
+        char *pid = trim(pt);
+        pt = strtok(NULL, ",");
+
+        char *serviceTime = trim(pt);
+        pt = strtok(NULL, ",");
+
+        char *arrivalTime = trim(pt);
+        pt = strtok(NULL, ",");
+
+        char *IO = trim(pt);
+    }
+    
+    fclose(ptr);
+    if (line) free(line);
+}
+
+char* trim(char* str) {
+    static char str1[99];
+    int count = 0, j, k;
+  
+    while (str[count] == ' ') {
+        count++;
+    }
+
+    for (j = count, k = 0;
+         str[j] != '\0'; j++, k++) {
+        str1[k] = str[j];
+    }
+    str1[k] = '\0';
+  
+    return str1;
+}
+
+void readProcessesFromKeyboard() {
+    // TODO
+}
+
+void createRandomProcesses() {
+    // TODO
 }
 
 Process* createProcesses(
