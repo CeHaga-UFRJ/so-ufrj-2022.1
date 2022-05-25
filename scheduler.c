@@ -16,8 +16,8 @@ Process* createProcesses(int *numProcesses, ProcessQueueDescriptor *highPriority
 Device* createDevice(int time, char *name);
 ProcessQueueDescriptor* createQueue();
 void executeDevice(Device *device);
-void checkDeviceEnd(Device *device, ProcessQueueElement *returnQueue);
-void checkDeviceStart(Device *device, ProcessQueueElement *inputQueue);
+void checkDeviceEnd(Device *device, ProcessQueueDescriptor *returnQueue);
+void checkDeviceStart(Device *device, ProcessQueueDescriptor *inputQueue);
 void addQueue(ProcessQueueDescriptor *queue, Process *process);
 Process* removeQueue(ProcessQueueDescriptor *queue);
 void newProcess(int instant, ProcessQueueDescriptor *queue);
@@ -63,20 +63,20 @@ struct ProcessQueueDescriptor{
 };
 
 struct IOQueueElement{
-    Device *deviceQueue;
+    ProcessQueueDescriptor *deviceQueue;
     int initialTime;
 };
 
 int main(int argc, char *argv[]) {
-    if (argc < 5) {
-        printf("Execute o programa colocando os tempos de serviço e de I/O\n");
-        printf("./%s <quantum> <Disco> <Fita> <Impressora>", argv[0]);
-        return -1;
-    }
-    const int TIME_SLICE = atoi(argv[1]);
-    const int DISK_TIMER = atoi(argv[2]);
-    const int TAPE_TIMER = atoi(argv[3]);
-    const int PRINTER_TIME = atoi(argv[4]);
+    // if (argc < 5) {
+    //     printf("Execute o programa colocando os tempos de serviço e de I/O\n");
+    //     printf("./%s <quantum> <Disco> <Fita> <Impressora>", argv[0]);
+    //     return -1;
+    // }
+    const int TIME_SLICE = 5;//atoi(argv[1]);
+    const int DISK_TIMER = 5;//atoi(argv[2]);
+    const int TAPE_TIMER = 5;//atoi(argv[3]);
+    const int PRINTER_TIME = 5;//atoi(argv[4]);
 
     showMenu();
     Device *cpu = createDevice(TIME_SLICE, "CPU");
@@ -112,7 +112,8 @@ int main(int argc, char *argv[]) {
             if (actualProcess->IO->initialTime == processedTime) {
                 ProcessQueueDescriptor *device = actualProcess->IO->deviceQueue;
                 actualProcess->IO = (actualProcess->IO)+1;
-                addQueue(device, removeQueue(cpu));
+                addQueue(device, actualProcess);
+                cpu->actualProcess = NULL;
             }
 
             if(remainingTime == 0){
@@ -163,7 +164,7 @@ void readProcessesFromFile() {
     FILE* ptr;
     char * line = NULL;
     size_t len = 0;
-    ssize_t read;
+    size_t read;
  
     ptr = fopen(filename, "r");
 
@@ -252,7 +253,7 @@ void executeDevice(Device *device){
     }
 }
 
-void checkDeviceEnd(Device *device, ProcessQueueElement *returnQueue){
+void checkDeviceEnd(Device *device, ProcessQueueDescriptor *returnQueue){
     if(!device->actualProcess) return;
 
     if(device->remainingTime == 0){
@@ -262,7 +263,7 @@ void checkDeviceEnd(Device *device, ProcessQueueElement *returnQueue){
     }
 }
 
-void checkDeviceStart(Device *device, ProcessQueueElement *inputQueue){
+void checkDeviceStart(Device *device, ProcessQueueDescriptor *inputQueue){
     if(device->actualProcess) return;
 
     device->actualProcess = removeQueue(inputQueue);
