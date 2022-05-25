@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// CONSTANTES
+/* Constants */
 #define MAX_PROCESSES 10
 #define TIME_SLICE 4
 
@@ -10,14 +10,26 @@
 #define TAPE_TIMER 8
 #define PRINTER_TIME 10
 
-// HEADERS
+/* Headers */
 typedef struct Process Process;
 typedef struct Device Device;
 typedef struct ProcessQueueElement ProcessQueueElement;
 typedef struct ProcessQueueDescriptor ProcessQueueDescriptor;
 typedef struct IOQueueElement IOQueueElement;
 
-// STRUCTS
+Process* createProcesses(int *numProcesses, ProcessQueueDescriptor *highPriority, ProcessQueueDescriptor *lowPriority, ProcessQueueDescriptor *diskQueue, ProcessQueueDescriptor *tapeQueue, ProcessQueueDescriptor *printerQueue);
+Device* createDevice(int time, char *name);
+ProcessQueueDescriptor* createQueue();
+void executeDevice(Device *device);
+void checkDeviceEnd(Device *device, ProcessQueueElement *returnQueue);
+void checkDeviceStart(Device *device, ProcessQueueElement *inputQueue);
+void addQueue(ProcessQueueDescriptor *queue, Process *process);
+Process* removeQueue(ProcessQueueDescriptor *queue);
+void newProcess(int instant, ProcessQueueDescriptor *queue);
+void killProcess(Process *process);
+
+
+/* Data structures */
 
 struct Process{
     int pid;
