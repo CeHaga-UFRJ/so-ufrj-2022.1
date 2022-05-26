@@ -2,8 +2,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Constants */
 #define MAX_PROCESSES 10
+#define MAX_IO 3
+
+#define NO_ERROR 0
+#define INVALID_NUMBER 3
+#define INVALID_ARGUMENT 4
+#define HELP \
+"Simula o funcionamento de um escalonador de processos com escalonamento circular\n\
+Para executar rode:\n\
+\t scheduler [-q#] [-d#] [-t#] [-p#]\n\
+\n\
+\tq\t: Tamanho do quantum (Time slice)\n\
+\td\t: Tempo de leitura do disco\n\
+\tt\t: Tempo de leitura da fita magnetica\n\
+\tp\t: Tempo de leitura da impressora\n\
+"
 
 /* Headers */
 typedef struct Process Process;
@@ -16,17 +30,21 @@ Process* createProcesses(int *numProcesses, ProcessQueueDescriptor *highPriority
 Device* createDevice(int time, char *name);
 ProcessQueueDescriptor* createQueue();
 void executeDevice(Device *device);
+void executeCPU(Device *cpu, int *numProcesses);
 void checkDeviceEnd(Device *device, ProcessQueueDescriptor *returnQueue);
 void checkDeviceStart(Device *device, ProcessQueueDescriptor *inputQueue);
 void addQueue(ProcessQueueDescriptor *queue, Process *process);
 Process* removeQueue(ProcessQueueDescriptor *queue);
 void newProcess(int instant, ProcessQueueDescriptor *queue);
-void killProcess(Process *process);
+void killProcess(Device *cpu, int *numProcesses);
+void checkProcessIO(Device *cpu);
 void showMenu();
 void readProcessesFromFile();
 void readProcessesFromKeyboard();
 void createRandomProcesses();
 char* trim(char* str);
+int handleParameter(char *ps);
+void exitProgram(int error);
 
 
 /* Data structures */
@@ -39,8 +57,9 @@ struct Process{
 
     int startTime;
     int processedTime;
-    int remainingTime;
+    int totalTime;
 
+    int actualIO;
     int numIO;
     IOQueueElement *IO;
 };
@@ -68,17 +87,41 @@ struct IOQueueElement{
 };
 
 int main(int argc, char *argv[]) {
-    // if (argc < 5) {
-    //     printf("Execute o programa colocando os tempos de serviço e de I/O\n");
-    //     printf("./%s <quantum> <Disco> <Fita> <Impressora>", argv[0]);
-    //     return -1;
-    // }
-    const int TIME_SLICE = 5;//atoi(argv[1]);
-    const int DISK_TIMER = 5;//atoi(argv[2]);
-    const int TAPE_TIMER = 5;//atoi(argv[3]);
-    const int PRINTER_TIME = 5;//atoi(argv[4]);
+    int TIME_SLICE = 4;
+    int DISK_TIMER = 3;
+    int TAPE_TIMER = 5;
+    int PRINTER_TIME = 8;
+
+    for(int i = 1; i < argc; i++){
+        char *arg = argv[i];
+        if(arg[0] != '-' || arg[1] == '\0') exitProgram(INVALID_ARGUMENT);
+        char flag = arg[1];
+        arg += 2;
+        
+        switch(flag){
+            case 'q':
+                TIME_SLICE = handleParameter(arg);
+                break;
+            case 'd':
+                DISK_TIMER = handleParameter(arg);
+                break;
+            case 't':
+                TAPE_TIMER = handleParameter(arg);
+                break;
+            case 'p':
+                PRINTER_TIME = handleParameter(arg);
+                break;
+            case 'h':
+                printf(HELP);
+                exit(0);
+                break;
+            default:
+                exitProgram(INVALID_ARGUMENT);
+        }
+    }
 
     showMenu();
+
     Device *cpu = createDevice(TIME_SLICE, "CPU");
     Device *disk = createDevice(DISK_TIMER, "Disco");
     Device *tape = createDevice(TAPE_TIMER, "Fita");
@@ -99,40 +142,23 @@ int main(int argc, char *argv[]) {
 
         newProcess(instant, highPriority);
 
+        checkDeviceStart(disk, diskQueue);
+        checkDeviceStart(tape, tapeQueue);
+        checkDeviceStart(printer, printerQueue);
+        checkDeviceStart(cpu, highPriority);
+        checkDeviceStart(cpu, lowPriority);
+
         executeDevice(disk);
         executeDevice(tape);
         executeDevice(printer);
-        executeDevice(cpu);
 
-        Process *actualProcess = cpu->actualProcess;
-        if(actualProcess){
-            int remainingTime = actualProcess->remainingTime--;
-            int processedTime = actualProcess->processedTime--;
-            
-            if (actualProcess->IO->initialTime == processedTime) {
-                ProcessQueueDescriptor *device = actualProcess->IO->deviceQueue;
-                actualProcess->IO = (actualProcess->IO)+1;
-                addQueue(device, actualProcess);
-                cpu->actualProcess = NULL;
-            }
-
-            if(remainingTime == 0){
-                killProcess(actualProcess);
-                numProcesses--;
-            }
-        }
+        executeCPU(cpu, &numProcesses);
 
         checkDeviceEnd(disk, lowPriority);
         checkDeviceEnd(tape, highPriority);
         checkDeviceEnd(printer, highPriority);
         checkDeviceEnd(cpu, lowPriority);
 
-        checkDeviceStart(disk, diskQueue);
-        checkDeviceStart(tape, tapeQueue);
-        checkDeviceStart(printer, printerQueue);
-        checkDeviceStart(cpu, highPriority);
-        checkDeviceStart(cpu, lowPriority);
-        
         printf("\n\n");
     }
     return 0;
@@ -304,7 +330,49 @@ void newProcess(int instant, ProcessQueueDescriptor *queue){
     // print(Processo criado);
 }
 
-void killProcess(Process *process){
-    printf("X Processo %d foi finalizado\n", process->pid);
-    free(process);
+void killProcess(Device *cpu, int *numProcesses){
+    if(cpu->actualProcess->processedTime == cpu->actualProcess->totalTime){
+        *numProcesses -= 1;
+        printf("X Processo %d foi finalizado\n", cpu->actualProcess->pid);
+        free(cpu->actualProcess);
+        cpu->actualProcess = NULL;
+    }
+}
+
+void checkProcessIO(Device *cpu){
+    if (cpu->actualProcess->IO->initialTime == cpu->actualProcess->processedTime) {
+        ProcessQueueDescriptor *device = cpu->actualProcess->IO->deviceQueue;
+        cpu->actualProcess->IO = (cpu->actualProcess->IO)+1;
+        addQueue(device, cpu->actualProcess);
+        cpu->actualProcess = NULL;
+    } 
+}
+
+void executeCPU(Device *cpu, int *numProcesses){
+    if(cpu->actualProcess){
+        cpu->remainingTime -= 1;
+        cpu->actualProcess->processedTime += 1;
+
+        killProcess(cpu, numProcesses);
+        
+        checkProcessIO(cpu);
+    }
+}
+
+int handleParameter(char *ps){
+    if(ps[0] == '\0') exitProgram(INVALID_NUMBER);
+
+    int value = 0;
+    for(char *s = ps; *s != '\0'; s++){
+        if(*s < '0' || *s > '9') exitProgram(INVALID_NUMBER);
+
+        value = value * 10 + (*s - '0');
+    } 
+    return value;
+}
+
+void exitProgram(int error){
+    if(!error) return;
+    printf("#Erro de codigo %d\n",error);
+    exit(error);
 }
