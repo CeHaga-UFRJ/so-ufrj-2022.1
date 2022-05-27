@@ -237,7 +237,40 @@ char* trim(char* str) {
 }
 
 void readProcessesFromKeyboard() {
-    // TODO
+    int arrivalTime;
+    int serviceTime;
+    char choice;
+    int exit = 0;
+    int requestTime;
+    for(int i = 0; i<MAX_PROCESSES; i++){
+    			printf("Criando %d° processo \n", i);
+    			printf("Qual o tempo de chegada do processo? \n");
+    			scanf(%d, &arrivalTime);
+    			printf("Qual o tempo de serviço do processo? \n");
+    			scanf(%d, &serviceTime);
+    			for(int j = 0; j<MAX_IO; j++){
+    				printf("Qual dispositivo faz IO? D para disco, F para fita, I para impressora, N para nenhum \n");
+    				scanf(%c, &choice);
+    				    switch (choice) {
+        case 'I':
+            //armazenar IO do tipo Impressora
+            break;
+        case 'D':
+            //armazenar IO do tipo Disco
+            break;
+        case 'F':
+            //armazenar IO do tipo Fita
+            break;
+        case 'N':
+        		 	 exit = 1
+        		 	 break
+        default:
+            printf("Opcao invalida. Escolha uma das seguintes opcoes: 1, 2 ou 3.");
+       		if(exit){
+       			break;
+       		}
+    			}				
+    }
 }
 
 void createRandomProcesses() {
