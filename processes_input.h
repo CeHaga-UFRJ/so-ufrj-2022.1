@@ -3,4 +3,6 @@
 
 #include "main.h"
 
+extern Process* createProcesses(int readProcessesFrom, int *numProcesses, QueueCollection *queues);
+
 #endif

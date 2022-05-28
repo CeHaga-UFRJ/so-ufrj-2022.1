@@ -3,21 +3,15 @@
 
 #include "main.h"
 
-typedef struct Process Process;
-typedef struct Device Device;
-typedef struct ProcessQueueElement ProcessQueueElement;
-typedef struct ProcessQueueDescriptor ProcessQueueDescriptor;
-typedef struct IOQueueElement IOQueueElement;
-
 struct Process{
     int pid;
     int ppid;
     int status;
     int priority;
 
-    int startTime;
+    int arrivalTime;
     int processedTime;
-    int totalTime;
+    int serviceTime;
 
     int actualIO;
     int numIO;
@@ -46,8 +40,38 @@ struct IOQueueElement{
     int initialTime;
 };
 
-extern Device* createDevice(int time, char *name);
-extern ProcessQueueDescriptor* createQueue();
+struct QueueCollection {
+    ProcessQueueDescriptor *highPriority;
+    ProcessQueueDescriptor *lowPriority;
+    ProcessQueueDescriptor *diskQueue;
+    ProcessQueueDescriptor *tapeQueue;
+    ProcessQueueDescriptor *printerQueue;
+};
+
+struct DeviceCollection {
+    Device *cpu;
+    Device *disk;
+    Device *tape;
+    Device *printer;
+};
+
+struct StructureCollection{
+    QueueCollection *queues;
+    DeviceCollection *devices;
+
+    int numProcesses;
+    Process *processes;
+};
+
+typedef struct Process Process;
+typedef struct Device Device;
+typedef struct ProcessQueueElement ProcessQueueElement;
+typedef struct ProcessQueueDescriptor ProcessQueueDescriptor;
+typedef struct IOQueueElement IOQueueElement;
+typedef struct QueueCollection QueueCollection;
+typedef struct DeviceCollection DeviceCollection;
+typedef struct StructureCollection StructureCollection;
+
 extern void addQueue(ProcessQueueDescriptor *queue, Process *process);
 extern Process* removeQueue(ProcessQueueDescriptor *queue);
 
