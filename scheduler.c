@@ -9,6 +9,7 @@
 #define INVALID_NUMBER 3
 #define INVALID_ARGUMENT 4
 #define INVALID_OPTION 5
+#define FILE_ERROR 6
 #define HELP \
 "Simula o funcionamento de um escalonador de processos usando a estratégia Round Robin (ou Circular) com Feedback.\n\
 Para executar rode:\n\
@@ -23,6 +24,8 @@ Para executar rode:\n\
 #define READY 0
 #define HIGH_PRIORITY 1
 #define LOW_PRIORITY 2
+
+#define MAX_IO_EXCEEDED "Numero maximo de entrada e saida excedido."
 
 /* Headers */
 typedef struct Process Process;
@@ -40,14 +43,14 @@ void checkDeviceEnd(Device *device, ProcessQueueDescriptor *returnQueue);
 void checkDeviceStart(Device *device, ProcessQueueDescriptor *inputQueue);
 void addQueue(ProcessQueueDescriptor *queue, Process *process);
 Process* removeQueue(ProcessQueueDescriptor *queue);
-void newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO);
+Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO);
 void addNewProcessToQueue(int instant, ProcessQueueDescriptor *queue);
 void killProcess(Device *cpu, int *numProcesses);
 void checkProcessIO(Device *cpu);
 int showMenu();
 char* trim(char* str);
-void readProcessesFromFile();
-void readProcessesFromKeyboard();
+Process* createProcessesFromFile(int *numProcesses, ProcessQueueDescriptor *highPriority, ProcessQueueDescriptor *lowPriority, ProcessQueueDescriptor *diskQueue, ProcessQueueDescriptor *tapeQueue, ProcessQueueDescriptor *printerQueue);
+void createProcessesFromKeyboard();
 void createRandomProcesses();
 int handleParameter(char *ps);
 void exitProgram(int error);
@@ -132,7 +135,7 @@ int main(int argc, char *argv[]) {
     Device *tape = createDevice(TAPE_TIMER, "Fita");
     Device *printer = createDevice(PRINTER_TIME, "Impressora");
 
-    // Cria as filas
+    // Cria as filas de prioridade e dos dispositivos de IO
     ProcessQueueDescriptor *highPriority = createQueue();
     ProcessQueueDescriptor *lowPriority = createQueue();
     ProcessQueueDescriptor *diskQueue = createQueue();
@@ -145,7 +148,9 @@ int main(int argc, char *argv[]) {
     // Vetor de processos
     Process *processes = createProcesses(readProcessesFrom, &numProcesses, highPriority, lowPriority, diskQueue, tapeQueue, printerQueue); // TODO
 
-    for(int instant = 0; numProcesses; instant++){
+    printf("%d processos criados\n", numProcesses);
+
+    for(int instant = 0; instant < numProcesses; instant++){
         printf("=== Começando instante %d ===\n", instant);
 
         addNewProcessToQueue(instant, highPriority); // adicionar novo processo na fila de alta prioridade
@@ -180,7 +185,36 @@ int showMenu() {
     return choice;
 }
 
-void createProcessesFromFile(ProcessQueueDescriptor *highPriority,
+Process* createProcesses(
+                    int readProcessesFrom,
+                    int *numProcesses,
+                    ProcessQueueDescriptor *highPriority,
+                    ProcessQueueDescriptor *lowPriority,
+                    ProcessQueueDescriptor *diskQueue,
+                    ProcessQueueDescriptor *tapeQueue,
+                    ProcessQueueDescriptor *printerQueue) {
+    *numProcesses = 0;
+    switch (readProcessesFrom) {
+        case 1:
+            createProcessesFromFile(numProcesses, highPriority, lowPriority, diskQueue, tapeQueue, printerQueue);
+            break;
+        case 2:
+            createProcessesFromKeyboard();
+            break;
+        case 3:
+            createRandomProcesses();
+            break;
+        default:
+            printf("Opcao invalida. Por favor, escolha uma das seguintes opcoes: 1, 2 ou 3.");
+            exitProgram(INVALID_OPTION);
+    }
+
+    return NULL;
+}
+
+Process* createProcessesFromFile(
+                    int *numProcesses,
+                    ProcessQueueDescriptor *highPriority,
                     ProcessQueueDescriptor *lowPriority,
                     ProcessQueueDescriptor *diskQueue,
                     ProcessQueueDescriptor *tapeQueue,
@@ -190,11 +224,13 @@ void createProcessesFromFile(ProcessQueueDescriptor *highPriority,
     char * line = NULL;
     size_t len = 0;
     size_t read;
+    Process *processes = (Process *) malloc(sizeof(Process) * MAX_PROCESSES); // crio array de processos
  
     ptr = fopen(filename, "r");
 
     if (NULL == ptr) {
-        printf("Falha ao abrir o arquivo de input \n");
+        printf("Falha ao abrir o arquivo de entrada \n");
+        exitProgram(FILE_ERROR);
     }
 
     while ((read = getline(&line, &len, ptr)) != -1) {
@@ -262,42 +298,25 @@ void createProcessesFromFile(ProcessQueueDescriptor *highPriority,
             printf("%d\n", IOInitialTime);
         }
 
-        newProcess(pid, arrivalTime, serviceTime, numIO, IO);
+        if(pt) {
+            printf("Existem mais entradas e saidas do que o maximo permitido. O processo %d será executado com somente %d entradas e saidas.\n", pid, MAX_IO);
+        }
+
+        (*numProcesses)++;
+        if(*numProcesses > MAX_PROCESSES) {
+            printf("Existem mais processos do que o maximo permitido. Somente %d processos serão executados.\n", MAX_PROCESSES);
+            break;
+        }
+
+        *processes = newProcess(pid, arrivalTime, serviceTime, numIO, IO);
+        printf("Id do processo = %d\n", processes->pid);
+        processes++;
     }
     
     fclose(ptr);
     if (line) free(line);
-}
 
-char* trim(char* str) {
-    static char str1[99];
-    int count = 0, j, k;
-
-    while (str[count] == ' ') {
-        count++;
-    }
-
-    for (j = count, k = 0;
-         str[j] != '\0'; j++, k++) {
-        str1[k] = str[j];
-    }
-    str1[k] = '\0';
-
-    return str1;
-}
-
-void newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO) {
-    printf("Criando o processo %d\n", pid);
-    Process process;
-    process.pid = pid;
-    process.status = READY; 
-    process.priority = HIGH_PRIORITY;
-    process.arrivalTime = arrivalTime;
-    process.processedTime = 0;
-    process.serviceTime = serviceTime;
-    process.actualIO = 0;
-    process.numIO = numIO;
-    process.IO = IO;
+    return processes;
 }
 
 void createProcessesFromKeyboard() {
@@ -342,30 +361,37 @@ void createRandomProcesses() {
     // TODO
 }
 
-Process* createProcesses(
-                    int readProcessesFrom,
-                    int *numProcesses,
-                    ProcessQueueDescriptor *highPriority,
-                    ProcessQueueDescriptor *lowPriority,
-                    ProcessQueueDescriptor *diskQueue,
-                    ProcessQueueDescriptor *tapeQueue,
-                    ProcessQueueDescriptor *printerQueue) {
-    switch (readProcessesFrom) {
-        case 1:
-            createProcessesFromFile(highPriority, lowPriority, diskQueue, tapeQueue, printerQueue);
-            break;
-        case 2:
-            createProcessesFromKeyboard();
-            break;
-        case 3:
-            createRandomProcesses();
-            break;
-        default:
-            printf("Opcao invalida. Por favor, escolha uma das seguintes opcoes: 1, 2 ou 3.");
-            exitProgram(INVALID_OPTION);
+char* trim(char* str) {
+    static char str1[99];
+    int count = 0, j, k;
+
+    while (str[count] == ' ') {
+        count++;
     }
 
-    return NULL;
+    for (j = count, k = 0;
+         str[j] != '\0'; j++, k++) {
+        str1[k] = str[j];
+    }
+    str1[k] = '\0';
+
+    return str1;
+}
+
+Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO) {
+    printf("Criando o processo %d\n", pid);
+    Process process;
+    process.pid = pid;
+    process.status = READY; 
+    process.priority = HIGH_PRIORITY;
+    process.arrivalTime = arrivalTime;
+    process.processedTime = 0;
+    process.serviceTime = serviceTime;
+    process.actualIO = 0;
+    process.numIO = numIO;
+    process.IO = IO;
+
+    return process;
 }
 
 Device* createDevice(int time, char *name){
