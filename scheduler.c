@@ -1,4 +1,4 @@
-#include "scheduler.h"
+#include "headers/scheduler.h"
 
 void scheduler(StructureCollection *structures);
 void executeDevice(Device *device);

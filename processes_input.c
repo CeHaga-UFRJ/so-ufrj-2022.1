@@ -1,4 +1,4 @@
-#include "processes_input.h"
+#include "headers/processes_input.h"
 
 char* trim(char* str);
 Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO);

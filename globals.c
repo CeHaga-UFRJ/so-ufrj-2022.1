@@ -1,4 +1,4 @@
-#include "globals.h"
+#include "headers/globals.h"
 
 void exitProgram(int error);
 
