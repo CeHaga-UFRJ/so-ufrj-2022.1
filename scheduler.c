@@ -8,6 +8,7 @@
 #define NO_ERROR 0
 #define INVALID_NUMBER 3
 #define INVALID_ARGUMENT 4
+#define INVALID_OPTION 5
 #define HELP \
 "Simula o funcionamento de um escalonador de processos usando a estratégia Round Robin (ou Circular) com Feedback.\n\
 Para executar rode:\n\
@@ -19,6 +20,10 @@ Para executar rode:\n\
 \tp\t: Tempo de leitura da impressora\n\
 "
 
+#define READY 0
+#define HIGH_PRIORITY 1
+#define LOW_PRIORITY 2
+
 /* Headers */
 typedef struct Process Process;
 typedef struct Device Device;
@@ -26,7 +31,7 @@ typedef struct ProcessQueueElement ProcessQueueElement;
 typedef struct ProcessQueueDescriptor ProcessQueueDescriptor;
 typedef struct IOQueueElement IOQueueElement;
 
-Process* createProcesses(int *numProcesses, ProcessQueueDescriptor *highPriority, ProcessQueueDescriptor *lowPriority, ProcessQueueDescriptor *diskQueue, ProcessQueueDescriptor *tapeQueue, ProcessQueueDescriptor *printerQueue);
+Process* createProcesses(int readProcessesFrom, int *numProcesses, ProcessQueueDescriptor *highPriority, ProcessQueueDescriptor *lowPriority, ProcessQueueDescriptor *diskQueue, ProcessQueueDescriptor *tapeQueue, ProcessQueueDescriptor *printerQueue);
 Device* createDevice(int time, char *name);
 ProcessQueueDescriptor* createQueue();
 void executeDevice(Device *device);
@@ -35,10 +40,11 @@ void checkDeviceEnd(Device *device, ProcessQueueDescriptor *returnQueue);
 void checkDeviceStart(Device *device, ProcessQueueDescriptor *inputQueue);
 void addQueue(ProcessQueueDescriptor *queue, Process *process);
 Process* removeQueue(ProcessQueueDescriptor *queue);
-void newProcess(int instant, ProcessQueueDescriptor *queue);
+void newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO);
+void addNewProcessToQueue(int instant, ProcessQueueDescriptor *queue);
 void killProcess(Device *cpu, int *numProcesses);
 void checkProcessIO(Device *cpu);
-void showMenu();
+int showMenu();
 char* trim(char* str);
 void readProcessesFromFile();
 void readProcessesFromKeyboard();
@@ -55,9 +61,9 @@ struct Process{
     int status;
     int priority;
 
-    int startTime;
+    int arrivalTime;
     int processedTime;
-    int totalTime;
+    int serviceTime;
 
     int actualIO;
     int numIO;
@@ -134,15 +140,15 @@ int main(int argc, char *argv[]) {
     ProcessQueueDescriptor *printerQueue = createQueue();
 
     int numProcesses;
-    showMenu(&numProcesses, highPriority, lowPriority, diskQueue, tapeQueue, printerQueue);
+    int readProcessesFrom = showMenu();
 
     // Vetor de processos
-    Process *processes = createProcesses(&numProcesses, highPriority, lowPriority, diskQueue, tapeQueue, printerQueue); // TODO
+    Process *processes = createProcesses(readProcessesFrom, &numProcesses, highPriority, lowPriority, diskQueue, tapeQueue, printerQueue); // TODO
 
     for(int instant = 0; numProcesses; instant++){
         printf("=== Começando instante %d ===\n", instant);
 
-        newProcess(instant, highPriority);
+        addNewProcessToQueue(instant, highPriority); // adicionar novo processo na fila de alta prioridade
 
         checkDeviceStart(disk, diskQueue);
         checkDeviceStart(tape, tapeQueue);
@@ -166,34 +172,15 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void showMenu(int *numProcesses, 
-                ProcessQueueDescriptor *highPriority,
-                ProcessQueueDescriptor *lowPriority,
-                ProcessQueueDescriptor *diskQueue,
-                ProcessQueueDescriptor *tapeQueue,
-                ProcessQueueDescriptor *printerQueue) {
+int showMenu() {
     int choice;
-
-    printf("Ola usuario! Como voce gostaria de realizar a criacao dos processos? \n 1 - Ler do arquivo input.txt \n 2 - Ler do teclado \n 3 - Criar processos com numeros aleatorios \n");
+    printf("Ola usuario, bem vindo ao simulador de escalonamento de processos! \nComo voce gostaria de realizar a criacao dos processos? \n 1 - Ler do arquivo input.txt \n 2 - Ler do teclado \n 3 - Criar processos com numeros aleatorios \n");
+    printf("Sua escolha: "), 
     scanf("%i", &choice);
-
-    // separar em outra função
-    switch (choice) {
-        case 1:
-            readProcessesFromFile(highPriority, lowPriority, diskQueue, tapeQueue, printerQueue);
-            break;
-        case 2:
-            readProcessesFromKeyboard();
-            break;
-        case 3:
-            createRandomProcesses();
-            break;
-        default:
-            printf("Opcao invalida. Escolha uma das seguintes opcoes: 1, 2 ou 3.");
-    }
+    return choice;
 }
 
-void readProcessesFromFile(ProcessQueueDescriptor *highPriority,
+void createProcessesFromFile(ProcessQueueDescriptor *highPriority,
                     ProcessQueueDescriptor *lowPriority,
                     ProcessQueueDescriptor *diskQueue,
                     ProcessQueueDescriptor *tapeQueue,
@@ -233,7 +220,7 @@ void readProcessesFromFile(ProcessQueueDescriptor *highPriority,
         // printf("%d\n", arrivalTime);
 
         char *IOLine = trim(pt);
-        printf("%s\n", IOLine);
+        // printf("%s\n", IOLine);
 
         int numIO = 0;
         pt = strtok(IOLine, "/");
@@ -264,7 +251,7 @@ void readProcessesFromFile(ProcessQueueDescriptor *highPriority,
                     break;
                 default:
                     printf("Opcao invalida. Escolha uma das seguintes opcoes: 1, 2 ou 3.");
-                    exit(1);
+                    exitProgram(INVALID_OPTION);
             }
             element.initialTime = IOInitialTime;
 
@@ -275,17 +262,7 @@ void readProcessesFromFile(ProcessQueueDescriptor *highPriority,
             printf("%d\n", IOInitialTime);
         }
 
-        // Criando novo processo
-        Process process;
-        process.pid = pid;
-        process.status = 0; // no início o processo nao esta pronto para ser executado
-        process.priority = 1; // prioridade alta
-        process.startTime = arrivalTime;
-        process.processedTime = 0;
-        process.totalTime = serviceTime;
-        process.actualIO = 0;
-        process.numIO = numIO;
-        process.IO = IO;
+        newProcess(pid, arrivalTime, serviceTime, numIO, IO);
     }
     
     fclose(ptr);
@@ -309,11 +286,21 @@ char* trim(char* str) {
     return str1;
 }
 
-void createNewProcess() {
-
+void newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO) {
+    printf("Criando o processo %d\n", pid);
+    Process process;
+    process.pid = pid;
+    process.status = READY; 
+    process.priority = HIGH_PRIORITY;
+    process.arrivalTime = arrivalTime;
+    process.processedTime = 0;
+    process.serviceTime = serviceTime;
+    process.actualIO = 0;
+    process.numIO = numIO;
+    process.IO = IO;
 }
 
-void readProcessesFromKeyboard() {
+void createProcessesFromKeyboard() {
     int arrivalTime;
     int serviceTime;
     char choice;
@@ -356,14 +343,27 @@ void createRandomProcesses() {
 }
 
 Process* createProcesses(
+                    int readProcessesFrom,
                     int *numProcesses,
                     ProcessQueueDescriptor *highPriority,
                     ProcessQueueDescriptor *lowPriority,
                     ProcessQueueDescriptor *diskQueue,
                     ProcessQueueDescriptor *tapeQueue,
-                    ProcessQueueDescriptor *printerQueue){
-
-    *numProcesses = 0;
+                    ProcessQueueDescriptor *printerQueue) {
+    switch (readProcessesFrom) {
+        case 1:
+            createProcessesFromFile(highPriority, lowPriority, diskQueue, tapeQueue, printerQueue);
+            break;
+        case 2:
+            createProcessesFromKeyboard();
+            break;
+        case 3:
+            createRandomProcesses();
+            break;
+        default:
+            printf("Opcao invalida. Por favor, escolha uma das seguintes opcoes: 1, 2 ou 3.");
+            exitProgram(INVALID_OPTION);
+    }
 
     return NULL;
 }
@@ -437,12 +437,12 @@ Process* removeQueue(ProcessQueueDescriptor *queue){
     return process;
 }
 
-void newProcess(int instant, ProcessQueueDescriptor *queue){
+void addNewProcessToQueue(int instant, ProcessQueueDescriptor *queue){
     // print(Processo criado);
 }
 
 void killProcess(Device *cpu, int *numProcesses){
-    if(cpu->actualProcess->processedTime == cpu->actualProcess->totalTime){
+    if(cpu->actualProcess->processedTime == cpu->actualProcess->serviceTime){
         *numProcesses -= 1;
         printf("X Processo %d foi finalizado\n", cpu->actualProcess->pid);
         free(cpu->actualProcess);
