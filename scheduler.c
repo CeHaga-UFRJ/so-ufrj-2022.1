@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define MAX_PROCESSES 10
 #define MAX_IO 3
@@ -24,8 +25,6 @@ Para executar rode:\n\
 #define READY 0
 #define HIGH_PRIORITY 1
 #define LOW_PRIORITY 2
-
-#define MAX_IO_EXCEEDED "Numero maximo de entrada e saida excedido."
 
 /* Headers */
 typedef struct Process Process;
@@ -51,7 +50,7 @@ int showMenu();
 char* trim(char* str);
 Process* createProcessesFromFile(int *numProcesses, ProcessQueueDescriptor *highPriority, ProcessQueueDescriptor *lowPriority, ProcessQueueDescriptor *diskQueue, ProcessQueueDescriptor *tapeQueue, ProcessQueueDescriptor *printerQueue);
 Process* createProcessesFromKeyboard(int *numProcesses, ProcessQueueDescriptor *highPriority, ProcessQueueDescriptor *lowPriority, ProcessQueueDescriptor *diskQueue, ProcessQueueDescriptor *tapeQueue, ProcessQueueDescriptor *printerQueue);
-void createRandomProcesses();
+Process* createRandomProcesses(int *numProcesses, ProcessQueueDescriptor *highPriority, ProcessQueueDescriptor *lowPriority, ProcessQueueDescriptor *diskQueue, ProcessQueueDescriptor *tapeQueue, ProcessQueueDescriptor *printerQueue);
 int handleParameter(char *ps);
 void exitProgram(int error);
 
@@ -149,7 +148,7 @@ int main(int argc, char *argv[]) {
 
     printf("%d processos criados\n", numProcesses);
 
-    for(int instant = 0; instant < numProcesses; instant++){
+    for(int instant = 0; numProcesses; instant++){
         printf("=== Começando instante %d ===\n", instant);
 
         addNewProcessToQueue(instant, highPriority); // adicionar novo processo na fila de alta prioridade
@@ -201,7 +200,7 @@ Process* createProcesses(
             createProcessesFromKeyboard(numProcesses, highPriority, lowPriority, diskQueue, tapeQueue, printerQueue);
             break;
         case 3:
-            createRandomProcesses();
+            createRandomProcesses(numProcesses, highPriority, lowPriority, diskQueue, tapeQueue, printerQueue);
             break;
         default:
             printf("Opcao invalida. Por favor, escolha uma das seguintes opcoes: 1, 2 ou 3.");
@@ -385,10 +384,63 @@ Process* createProcessesFromKeyboard(
         processes++;
     }
     *numProcesses = i;
+    return processes;
 }
 
-void createRandomProcesses() {
-    // TODO
+Process* createRandomProcesses(
+                    int *numProcesses,
+                    ProcessQueueDescriptor *highPriority,
+                    ProcessQueueDescriptor *lowPriority,
+                    ProcessQueueDescriptor *diskQueue,
+                    ProcessQueueDescriptor *tapeQueue,
+                    ProcessQueueDescriptor *printerQueue) {
+    int i, arrivalTime, serviceTime, numIO, IOType, IOInitialTime, pid;
+    Process *processes = (Process *) malloc(sizeof(Process) * MAX_PROCESSES);
+
+    srand((unsigned) time(NULL));
+
+    *numProcesses = 1 + (rand() % MAX_PROCESSES);
+
+    for(i = 0; i < *numProcesses; i++) {
+        pid = i + 1;
+        arrivalTime = rand() % 100;
+        serviceTime = rand() % 100;
+        numIO = rand() % MAX_IO;
+
+        IOQueueElement *IO = (IOQueueElement *) malloc(sizeof(IOQueueElement) * MAX_IO); // array de IO
+
+        for(int i = 0; i < numIO; i++) {
+            // Crio um elemento para a fila de IO
+            IOQueueElement element;
+            IOType = 1 + (rand() % 3);
+            IOInitialTime = 1 + (rand() % 3);
+    		switch (IOType) {
+                case 1:
+                    element.deviceQueue = diskQueue; // fila de disco
+                    printf("-- Processo %d tem IO do tipo disco --\n", pid);
+                    break;
+                case 2:
+                    element.deviceQueue = tapeQueue; // fila de fita
+                    printf("-- Processo %d tem IO do tipo fita --\n", pid);
+                    break;
+                case 3:
+                    element.deviceQueue = printerQueue; // fila de impressora
+                    printf("-- Processo %d tem IO do tipo impressora --\n", pid);
+                    break;
+                default:
+                    printf("Opcao invalida. Erro ao gerar opcao de IO valida.");
+                    exitProgram(INVALID_OPTION);
+    	    }
+            element.initialTime = IOInitialTime;
+            *IO = element;
+            IO++;			
+        }
+        if (numIO == 0) printf("-- Processo %d nao tem IO --\n", pid);
+        *processes = newProcess(pid, arrivalTime, serviceTime, numIO, IO);
+        processes++;
+    }
+
+    return processes;
 }
 
 char* trim(char* str) {
