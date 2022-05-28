@@ -42,3 +42,23 @@ Process* removeQueue(ProcessQueueDescriptor *queue){
 
     return process;
 }
+
+StructureCollection* createStructures(int readProcessesFrom){
+    StructureCollection *collection = (StructureCollection *)malloc(sizeof(StructureCollection));
+    
+    collection->devices = (DeviceCollection *)malloc(sizeof(DeviceCollection));
+    collection->devices->cpu = createDevice(TIME_SLICE, "CPU");
+    collection->devices->disk = createDevice(DISK_TIMER, "Disco");
+    collection->devices->tape = createDevice(TAPE_TIMER, "Fita");
+    collection->devices->printer = createDevice(PRINTER_TIME, "Impressora");
+
+    collection->queues = (QueueCollection *)malloc(sizeof(QueueCollection));
+    collection->queues->highPriority = createQueue();
+    collection->queues->lowPriority = createQueue();
+    collection->queues->diskQueue = createQueue();
+    collection->queues->tapeQueue = createQueue();
+    collection->queues->printerQueue = createQueue();
+
+    collection->processes = createProcesses(readProcessesFrom, &collection->numProcesses, collection->queues);
+    printf("%d processos criados\n", collection->numProcesses);
+}

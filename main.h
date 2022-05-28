@@ -4,6 +4,8 @@
 #define NO_ERROR 0
 #define INVALID_NUMBER 3
 #define INVALID_ARGUMENT 4
+#define INVALID_OPTION 5
+#define FILE_ERROR 6
 #define HELP \
 "Simula o funcionamento de um escalonador de processos com escalonamento circular\n\
 Para executar rode:\n\
@@ -15,9 +17,19 @@ Para executar rode:\n\
 \tp\t: Tempo de leitura da impressora\n\
 "
 
+#define READY 0
+#define HIGH_PRIORITY 0
+#define LOW_PRIORITY 1
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include "structures.h"
 #include "scheduler_arguments.h"
+#include "processes_input.h"
+#include "scheduler.h"
+
+extern void exitProgram(int error);
 
 #endif

@@ -1,24 +1,21 @@
 #include "main.h"
 
-int handleParameter(char *ps){
-    if(ps[0] == '\0') exitProgram(INVALID_NUMBER);
-
-    int value = 0;
-    for(char *s = ps; *s != '\0'; s++){
-        if(*s < '0' || *s > '9') exitProgram(INVALID_NUMBER);
-
-        value = value * 10 + (*s - '0');
-    } 
-    return value;
-}
-
 void exitProgram(int error){
     if(!error) return;
     printf("#Erro de codigo %d\n",error);
     exit(error);
 }
 
+int showMenu() {
+    int choice;
+    printf("Ola usuario, bem vindo ao simulador de escalonamento de processos! \nComo voce gostaria de realizar a criacao dos processos? \n 1 - Criar a partir do arquivo input.txt \n 2 - Criar a partir do teclado \n 3 - Criar com numeros aleatorios \n");
+    printf("Sua escolha: "), 
+    scanf("%i", &choice);
+    return choice;
+}
+
 int main(int argc, char *argv[]){
-  
+    readArgumentsFromConsole(argc, argv);
+    int readProcessesFrom = showMenu();
     return 0;
 }
