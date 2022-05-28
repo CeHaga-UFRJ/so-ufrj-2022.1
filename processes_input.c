@@ -52,8 +52,7 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
     ptr = fopen(filename, "r");
 
     if (NULL == ptr) {
-        printf("Falha ao abrir o arquivo de entrada \n");
-        exitProgram(FILE_ERROR);
+        exitProgram(FILE_ERROR, "Falha ao abrir o arquivo de entrada");
     }
 
     while ((read = getline(&line, &len, ptr)) != -1) {
@@ -117,8 +116,7 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
                         element.deviceQueue = queues->tapeQueue; // fila de fita
                         break;
                     default:
-                        printf("Opcao invalida. Escolha uma das seguintes opcoes: 1, 2 ou 3.");
-                        exitProgram(INVALID_OPTION);
+                        exitProgram(INVALID_OPTION, "Opcao invalida. Escolha uma das seguintes opcoes: 1, 2 ou 3.");
                 }
                 element.initialTime = IOInitialTime;
 
@@ -196,8 +194,7 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
                     noMoreIO = 1;
                     break;
                 default:
-                    printf("Opcao invalida. Escolha uma das seguintes opcoes: 1 para disco, 2 para fita, 3 para impressora, 4 para nenhum.");
-                    exitProgram(INVALID_OPTION);
+                    exitProgram(INVALID_OPTION, "Opcao invalida. Escolha uma das seguintes opcoes: 1 para disco, 2 para fita, 3 para impressora, 4 para nenhum.");
     	    }
             
             if(noMoreIO) break;	
@@ -253,8 +250,7 @@ Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
                     printf("-- Processo %d tem IO do tipo impressora --\n", pid);
                     break;
                 default:
-                    printf("Opcao invalida. Erro ao gerar opcao de IO valida.");
-                    exitProgram(INVALID_OPTION);
+                    exitProgram(INVALID_OPTION, "Opcao invalida. Erro ao gerar opcao de IO valida.");
     	    }
             element.initialTime = IOInitialTime;
             *IOPtr = element;
@@ -278,7 +274,6 @@ Process* createProcesses(int readProcessesFrom, int *numProcesses, QueueCollecti
         case 3:
             return createRandomProcesses(numProcesses, queues);
     }
-    printf("Opcao invalida. Por favor, escolha uma das seguintes opcoes: 1, 2 ou 3.");
-    exitProgram(INVALID_OPTION);
+    exitProgram(INVALID_OPTION, "Opcao invalida. Por favor, escolha uma das seguintes opcoes: 1, 2 ou 3.");
     return NULL;
 }
