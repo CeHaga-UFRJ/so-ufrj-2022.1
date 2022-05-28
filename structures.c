@@ -1,5 +1,11 @@
 #include "structures.h"
 
+Device* createDevice(int time, char *name);
+ProcessQueueDescriptor* createQueue();
+void addQueue(ProcessQueueDescriptor *queue, Process *process);
+Process* removeQueue(ProcessQueueDescriptor *queue);
+StructureCollection* createStructures(int readProcessesFrom);
+
 Device* createDevice(int time, char *name){
     Device *device = (Device *)malloc(sizeof(Device));
     device->remainingTime = device->duration = time;
@@ -60,5 +66,8 @@ StructureCollection* createStructures(int readProcessesFrom){
     collection->queues->printerQueue = createQueue();
 
     collection->processes = createProcesses(readProcessesFrom, &collection->numProcesses, collection->queues);
-    printf("%d processos criados\n", collection->numProcesses);
+    collection->actualProcessIndex = 0;
+    printf("%d processo(s) criado(s)\n", collection->numProcesses);
+
+    return collection;
 }

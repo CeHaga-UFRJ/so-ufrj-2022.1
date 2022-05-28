@@ -1,7 +1,17 @@
 #ifndef __STRUCTURES_H__
 #define __STRUCTURES_H__
 
-#include "main.h"
+#include "globals.h"
+#include "scheduler_arguments.h"
+
+typedef struct Process Process;
+typedef struct Device Device;
+typedef struct ProcessQueueElement ProcessQueueElement;
+typedef struct ProcessQueueDescriptor ProcessQueueDescriptor;
+typedef struct IOQueueElement IOQueueElement;
+typedef struct QueueCollection QueueCollection;
+typedef struct DeviceCollection DeviceCollection;
+typedef struct StructureCollection StructureCollection;
 
 struct Process{
     int pid;
@@ -59,20 +69,16 @@ struct StructureCollection{
     QueueCollection *queues;
     DeviceCollection *devices;
 
+    int actualProcessIndex;
     int numProcesses;
     Process *processes;
 };
 
-typedef struct Process Process;
-typedef struct Device Device;
-typedef struct ProcessQueueElement ProcessQueueElement;
-typedef struct ProcessQueueDescriptor ProcessQueueDescriptor;
-typedef struct IOQueueElement IOQueueElement;
-typedef struct QueueCollection QueueCollection;
-typedef struct DeviceCollection DeviceCollection;
-typedef struct StructureCollection StructureCollection;
+#include "processes_input.h"
+
 
 extern void addQueue(ProcessQueueDescriptor *queue, Process *process);
 extern Process* removeQueue(ProcessQueueDescriptor *queue);
+extern StructureCollection* createStructures(int readProcessesFrom);
 
 #endif

@@ -1,7 +1,7 @@
 #ifndef __SCHEDULER_ARGS__
 #define __SCHEDULER_ARGS__
 
-#include "main.h"
+#include "globals.h"
 
 #define MAX_PROCESSES 10
 #define MAX_IO 3

@@ -1,9 +1,13 @@
 #include "main.h"
 
-void exitProgram(int error){
-    if(!error) return;
-    printf("#Erro de codigo %d\n",error);
-    exit(error);
+int showMenu();
+
+int main(int argc, char *argv[]){
+    readArgumentsFromConsole(argc, argv);
+    int readProcessesFrom = showMenu();
+    StructureCollection *structures = createStructures(readProcessesFrom);
+    scheduler(structures);
+    return 0;
 }
 
 int showMenu() {
@@ -12,10 +16,4 @@ int showMenu() {
     printf("Sua escolha: "), 
     scanf("%i", &choice);
     return choice;
-}
-
-int main(int argc, char *argv[]){
-    readArgumentsFromConsole(argc, argv);
-    int readProcessesFrom = showMenu();
-    return 0;
 }
