@@ -1,9 +1,12 @@
 #include "globals.h"
 
-void exitProgram(int error);
+void exitProgram(int error, char *errorMessage);
 
-void exitProgram(int error){
+/*
+Finaliza o programa e imprime a mensagem de erro
+*/
+void exitProgram(int error, char *errorMessage){
     if(!error) return;
-    printf("#Erro de codigo %d\n",error);
+    printf("%s\n", errorMessage);
     exit(error);
 }

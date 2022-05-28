@@ -11,7 +11,7 @@ void executeCPU(Device *cpu, int *numProcesses);
 
 void scheduler(StructureCollection *structures){
     int killedProcesses = 0;
-    for(int instant = 0; killedProcesses < structures->numProcesses && instant < 50; instant++){
+    for(int instant = 0; killedProcesses < structures->numProcesses; instant++){
         printf("=== Começando instante %d ===\n", instant);
         printf("Atualmente tem %d processos totais, %d processos em execução e %d processos mortos\n", structures->numProcesses, structures->actualProcessIndex, killedProcesses);
 

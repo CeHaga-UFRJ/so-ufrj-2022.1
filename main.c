@@ -7,7 +7,7 @@ int main(int argc, char *argv[]){
     int readProcessesFrom = showMenu();
     StructureCollection *structures = createStructures(readProcessesFrom);
     scheduler(structures);
-    return 0;
+    return NO_ERROR;
 }
 
 int showMenu() {
