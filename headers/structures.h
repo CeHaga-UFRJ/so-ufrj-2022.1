@@ -80,5 +80,6 @@ struct StructureCollection{
 extern void addQueue(ProcessQueueDescriptor *queue, Process *process);
 extern Process* removeQueue(ProcessQueueDescriptor *queue);
 extern StructureCollection* createStructures(int readProcessesFrom);
+extern void destroyStructures(StructureCollection **collection);
 
 #endif

@@ -5,7 +5,11 @@ ProcessQueueDescriptor* createQueue();
 void addQueue(ProcessQueueDescriptor *queue, Process *process);
 Process* removeQueue(ProcessQueueDescriptor *queue);
 StructureCollection* createStructures(int readProcessesFrom);
+void destroyStructures(StructureCollection **collection);
 
+/*
+ * Cria um dispositivo
+ */
 Device* createDevice(int time, char *name){
     Device *device = (Device *)malloc(sizeof(Device));
     device->remainingTime = device->duration = time;
@@ -15,6 +19,9 @@ Device* createDevice(int time, char *name){
     return device;
 }
 
+/*
+ * Cria uma fila de processos
+ */
 ProcessQueueDescriptor* createQueue(){
     ProcessQueueDescriptor* queue = (ProcessQueueDescriptor *)malloc(sizeof(ProcessQueueDescriptor));
     queue->head = queue->tail = NULL;
@@ -22,6 +29,9 @@ ProcessQueueDescriptor* createQueue(){
     return queue;
 }
 
+/*
+ * Adiciona um processo na fila
+ */
 void addQueue(ProcessQueueDescriptor *queue, Process *process){
     if(!process) return;
 
@@ -35,6 +45,9 @@ void addQueue(ProcessQueueDescriptor *queue, Process *process){
     queue->tail = processQueue;
 }
 
+/*
+ * Remove um processo da fila
+ */
 Process* removeQueue(ProcessQueueDescriptor *queue){
     if(!queue->head) return NULL;
 
@@ -49,6 +62,9 @@ Process* removeQueue(ProcessQueueDescriptor *queue){
     return process;
 }
 
+/*
+ * Cria as estruturas basicas
+ */
 StructureCollection* createStructures(int readProcessesFrom){
     StructureCollection *collection = (StructureCollection *)malloc(sizeof(StructureCollection));
     
@@ -70,4 +86,26 @@ StructureCollection* createStructures(int readProcessesFrom){
     printf("%d processo(s) criado(s)\n", collection->numProcesses);
 
     return collection;
+}
+
+/*
+ * Libera as estruturas
+ */
+void destroyStructures(StructureCollection **collection){
+    free((*collection)->devices->cpu);
+    free((*collection)->devices->disk);
+    free((*collection)->devices->tape);
+    free((*collection)->devices->printer);
+    free((*collection)->devices);
+
+    free((*collection)->queues->highPriority);
+    free((*collection)->queues->lowPriority);
+    free((*collection)->queues->diskQueue);
+    free((*collection)->queues->tapeQueue);
+    free((*collection)->queues->printerQueue);
+    free((*collection)->queues);
+
+    free((*collection)->processes);
+
+    free((*collection));
 }
