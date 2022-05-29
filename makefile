@@ -26,24 +26,16 @@ test_create_processes_by_file:
 	printf "1, 13, 0, D-2/D-4/I-9 \n2, 2, 1 \n3, 15, 13, F-1/D-7" > in/input.txt
 	$(CMPL) $(TARGET) && echo 1 | $(EXE)
 
-# Expected to
-
 # Teste de input com números aleatórios
 test_create_processes_randomly:
 	$(CMPL) $(TARGET) && echo 3 | $(EXE)
-
-# Expected to
 
 # Teste de input por arquivo com número de I/Os maior que o permitido
 test_max_io:
 	printf "1, 13, 0, D-2/D-4/I-9/F-5 \n2, 2, 1 \n3, 15, 13, F-1/D-7" > in/input.txt
 	$(CMPL) $(TARGET) && echo 1 | $(EXE)
 
-# Expected to
-
 # Teste de input por arquivo com número de processos maior que o permitido
 test_max_processes:
 	printf "1, 13, 0, D-2/D-4/I-9 \n2, 2, 1 \n3, 15, 3, F-1/D-7 \n4, 15, 4, F-1 \n5, 15, 5, D-7 \n6, 15, 6, I-1 \n7, 15, 7" > in/input.txt
 	$(CMPL) $(TARGET) && echo 1 | $(EXE)
-
-# Expected to
