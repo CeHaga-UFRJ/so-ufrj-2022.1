@@ -1,6 +1,7 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
+// Validacao de erros
 #define NO_ERROR 0
 #define HELP 3
 #define INVALID_NUMBER 4
@@ -18,10 +19,16 @@ Para executar rode:\n\
 \tp\t: Tempo de leitura da impressora\n\
 "
 
+// Status do processo
 #define READY 0
+#define WAITING 1
+#define BLOCKED 2
+
+// Prioridade do processo
 #define HIGH_PRIORITY 0
 #define LOW_PRIORITY 1
 
+// Bibliotecas
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

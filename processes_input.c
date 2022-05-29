@@ -6,6 +6,8 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues);
 Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues) ;
 Process* createRandomProcesses(int *numProcesses, QueueCollection *queues);
 Process* createProcesses(int readProcessesFrom, int *numProcesses, QueueCollection *queues);
+void sortProcess(Process* processes, int size);
+void sortIO(IOQueueElement* IO, int size);
 
 char* trim(char* str) {
     static char str1[99];
@@ -56,8 +58,6 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
     }
 
     while ((read = getline(&line, &len, ptr)) != -1) {
-        // printf("%s", line);
-
         char *pt = strtok(line, ",");
         char *part;
         int pid, serviceTime, arrivalTime;
@@ -65,31 +65,22 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
         part = trim(pt);
         pt = strtok(NULL, ",");
         pid = atoi(part);
-        // printf("%d\n", pid);
 
         part = trim(pt);
         pt = strtok(NULL, ",");
         serviceTime = atoi(part);
-        // printf("%d\n", serviceTime);
 
         part = trim(pt);
         pt = strtok(NULL, ",");
         arrivalTime = atoi(part);
-        // printf("%d\n", arrivalTime);
-        printf("80 %s\n", pt);
+        
         IOQueueElement *IO;
         int numIO = 0;
 
+        // Se tiver IO
         if(pt){
-
             char *IOLine = trim(pt);
-            // printf("%s\n", IOLine);
-            printf("84 %s\n", IOLine);
-
             pt = strtok(IOLine, "/");
-
-            printf("89 %s\n", IOLine);
-
             IO = (IOQueueElement *) malloc(sizeof(IOQueueElement) * MAX_IO); // crio o array de elementos de fila de IO
             IOQueueElement *IOPtr = IO;
 
@@ -122,9 +113,6 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
 
                 *IOPtr = element;
                 IOPtr++;
-
-                // printf("%c\n", IOType);
-                // printf("%d\n", IOInitialTime);
             }
             if(pt) {
                 printf("Existem mais entradas e saidas do que o maximo permitido. O processo %d será executado com somente %d entradas e saidas.\n", pid, MAX_IO);
@@ -137,7 +125,6 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
         }
 
         *processesPtr = newProcess(pid, arrivalTime, serviceTime, numIO, IO);
-        // printf("Id do processo = %d\n", processesPtr->pid);
         processesPtr++;
     }
     
@@ -205,7 +192,6 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
             IOPtr++;			
         }
         *processesPtr = newProcess(i+1, arrivalTime, serviceTime, numIO, IO);
-        //printf("Id do processo = %d\n", processesPtr->pid);
         processesPtr++;
     }
     *numProcesses = i;
@@ -216,6 +202,7 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
 Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
     int i, arrivalTime, serviceTime, numIO, IOType, IOInitialTime, pid;
     int sameInstant = 0;
+    int minIOServiceTime = MAX_IO + 2;
     Process *processes = (Process *) malloc(sizeof(Process) * MAX_PROCESSES);
     Process *processesPtr = processes;
 
@@ -225,64 +212,63 @@ Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
 
     for(i = 0; i < *numProcesses; i++) {
         pid = i + 1;
-        arrivalTime = rand() % 100;
-        serviceTime = rand() % 100;
-        numIO = rand() % MAX_IO;
+        arrivalTime = i == 0 ? 0 : 1 + (rand() % 10);
+        serviceTime = 1 + rand() % 10;
+        numIO = (rand() % MAX_IO) % serviceTime;
         int *generatedInstants = (int *) calloc(MAX_IO, sizeof(int));
 
         IOQueueElement *IO = (IOQueueElement *) malloc(sizeof(IOQueueElement) * MAX_IO); // array de IO
         IOQueueElement *IOPtr = IO;
 
-        printf("Duracao do processo %d\n", serviceTime);
+        if (serviceTime > minIOServiceTime) {
+            for(int k = 0; k < numIO; k++) {
+                // Crio um elemento para a fila de IO
+                IOQueueElement element;
+                IOType = 1 + (rand() % 3);
 
-        for(int i = 0; i < numIO; i++) {
-            // Crio um elemento para a fila de IO
-            IOQueueElement element;
-            IOType = 1 + (rand() % 3);
-
-            // Um mesmo processo nao pode ter duas IO no mesmo instante
-            do {
-                sameInstant = 0;
-                IOInitialTime = 1 + (rand() % (serviceTime - 1));
-                printf("Gerei o instante %d \n", IOInitialTime);
-                for (int j = 0; j < i; j++) {
-                    printf("%d = %d", j, generatedInstants[j]);
-                    if (IOInitialTime == generatedInstants[j]) {
-                        printf("Achei instante igual em %d", j);
-                        sameInstant = 1;
-                        break;
+                // Um mesmo processo nao pode ter duas IO no mesmo instante
+                do {
+                    sameInstant = 0;
+                    IOInitialTime = 1 + (rand() % (serviceTime - 1));
+                    for (int j = 0; j < k; j++) {
+                        if (IOInitialTime == generatedInstants[j]) {
+                            sameInstant = 1;
+                            break;
+                        }
                     }
-                }
-            } while(sameInstant == 1);
-            
-            generatedInstants[i] = IOInitialTime;
+                } while(sameInstant == 1);
+                
+                generatedInstants[k] = IOInitialTime;
 
-    		switch (IOType) {
-                case 1:
-                    element.deviceQueue = queues->diskQueue; // fila de disco
-                    printf("-- Processo %d tem IO do tipo disco --\n", pid);
-                    break;
-                case 2:
-                    element.deviceQueue = queues->tapeQueue; // fila de fita
-                    printf("-- Processo %d tem IO do tipo fita --\n", pid);
-                    break;
-                case 3:
-                    element.deviceQueue = queues->printerQueue; // fila de impressora
-                    printf("-- Processo %d tem IO do tipo impressora --\n", pid);
-                    break;
-                default:
-                    printf("Opcao invalida. Erro ao gerar opcao de IO valida.");
-                    exitProgram(INVALID_OPTION);
-    	    }
-            element.initialTime = IOInitialTime;
-            *IOPtr = element;
-            IOPtr++;			
+                switch (IOType) {
+                    case 1:
+                        element.deviceQueue = queues->diskQueue; // fila de disco
+                        printf("-- Processo %d tem IO do tipo disco --\n", pid);
+                        break;
+                    case 2:
+                        element.deviceQueue = queues->tapeQueue; // fila de fita
+                        printf("-- Processo %d tem IO do tipo fita --\n", pid);
+                        break;
+                    case 3:
+                        element.deviceQueue = queues->printerQueue; // fila de impressora
+                        printf("-- Processo %d tem IO do tipo impressora --\n", pid);
+                        break;
+                    default:
+                        printf("Opcao invalida. Erro ao gerar opcao de IO valida.");
+                        exitProgram(INVALID_OPTION, "Opcao invalida. Erro ao gerar opcao de IO valida.");
+                }
+                element.initialTime = IOInitialTime;
+                *IOPtr = element;
+                IOPtr++;			
+            }
+            sortIO(IO, numIO);
         }
-        if (numIO == 0) printf("-- Processo %d nao tem IO --\n", pid);
+
+        if (numIO == 0 || serviceTime < minIOServiceTime) printf("-- Processo %d nao tem IO --\n", pid);
         *processesPtr = newProcess(pid, arrivalTime, serviceTime, numIO, IO);
         processesPtr++;
     }
-
+    sortProcess(processes, *numProcesses);
     return processes;
 }
 
@@ -298,4 +284,28 @@ Process* createProcesses(int readProcessesFrom, int *numProcesses, QueueCollecti
     }
     exitProgram(INVALID_OPTION, "Opcao invalida. Por favor, escolha uma das seguintes opcoes: 1, 2 ou 3.");
     return NULL;
+}
+
+void sortProcess(Process* processes, int size) { 
+    for (int i = 0; i < size; i++) { 
+        for (int j = i+1; j < size; j++) { 
+            if ((processes+i)->arrivalTime > (processes+j)->arrivalTime) { 
+                Process aux = *(processes+j); 
+                *(processes+j) = *(processes+i); 
+                *(processes+i) = aux; 
+            }      
+        } 
+    }   
+}
+
+void sortIO(IOQueueElement* IO, int size) {
+    for (int i = 0; i < size; i++) {
+        for (int j = i+1; j < size; j++) {
+            if ((IO+i)->initialTime > (IO+j)->initialTime) {
+                IOQueueElement aux = *(IO+j);
+                *(IO+j) = *(IO+i);
+                *(IO+i) = aux;
+            }     
+        }
+    }  
 }

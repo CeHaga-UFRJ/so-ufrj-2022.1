@@ -3,7 +3,8 @@
 
 #include "globals.h"
 
-#define MAX_PROCESSES 10
+// Constantes com definicoes de tempos e limites
+#define MAX_PROCESSES 5
 #define MAX_IO 3
 #define TIME_SLICE getTimeSlice()
 #define DISK_TIMER getDiskTimer()
