@@ -47,22 +47,17 @@ Alguns testes foram pré-configurados no makefile para testar o funcionamento do
   make test_create_processes_by_file
 ```
 
-2. Para testar o funcionamento a partir do teclado:
-```
-  make test_create_processes_by_keyboard
-```
-
-3. Para testar o funcionamento com processos aleatórios:
+2. Para testar o funcionamento com processos aleatórios:
 ```
   make test_create_processes_randomly
 ```
 
-4. Para testar o funcionamento quando o número máximo de I/O por processo é ultrapassado:
+3. Para testar o funcionamento quando o número máximo de I/O por processo é ultrapassado:
 ```
   make test_max_io
 ```
 
-5. Para testar o funcionamento quando o número máximo de processos é ultrapassado:
+4. Para testar o funcionamento quando o número máximo de processos é ultrapassado:
 ```
   make test_max_processes
 ```

@@ -28,12 +28,6 @@ test_create_processes_by_file:
 
 # Expected to
 
-# Teste de input por teclado com input válido
-test_create_processes_by_keyboard:
-	$(CMPL) $(TARGET) && echo 2 1 13 1 2 1 4 3 9 2 | $(EXE)
-
-# Expected to
-
 # Teste de input com números aleatórios
 test_create_processes_randomly:
 	$(CMPL) $(TARGET) && echo 3 | $(EXE)
