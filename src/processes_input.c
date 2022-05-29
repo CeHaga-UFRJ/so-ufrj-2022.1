@@ -273,7 +273,6 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
  */
 Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
     int i, arrivalTime, serviceTime, numIO, IOType, IOInitialTime, pid;
-    int sameInstant = 0;
     int minIOServiceTime = MAX_IO + 2;
     Process *processes = (Process *) malloc(sizeof(Process) * MAX_PROCESSES);
     Process *processesPtr = processes;
