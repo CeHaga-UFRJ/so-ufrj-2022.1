@@ -149,6 +149,7 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
         (*numProcesses)++;
         if(*numProcesses > MAX_PROCESSES) {
             printf("Existem mais processos do que o maximo permitido. Somente %d processos serao executados.\n", MAX_PROCESSES);
+            (*numProcesses)--;
             break;
         }
 
