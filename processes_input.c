@@ -1,4 +1,4 @@
-#include "processes_input.h"
+#include "headers/processes_input.h"
 
 char* trim(char* str);
 Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO);
@@ -227,6 +227,7 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
 
 Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
     int i, arrivalTime, serviceTime, numIO, IOType, IOInitialTime, pid;
+    int sameInstant = 0;
     Process *processes = (Process *) malloc(sizeof(Process) * MAX_PROCESSES);
     Process *processesPtr = processes;
 
@@ -239,15 +240,35 @@ Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
         arrivalTime = rand() % 100;
         serviceTime = rand() % 100;
         numIO = rand() % MAX_IO;
+        int *generatedInstants = (int *) calloc(MAX_IO, sizeof(int));
 
         IOQueueElement *IO = (IOQueueElement *) malloc(sizeof(IOQueueElement) * MAX_IO); // array de IO
         IOQueueElement *IOPtr = IO;
+
+        printf("Duracao do processo %d\n", serviceTime);
 
         for(int i = 0; i < numIO; i++) {
             // Crio um elemento para a fila de IO
             IOQueueElement element;
             IOType = 1 + (rand() % 3);
-            IOInitialTime = 1 + (rand() % 3);
+
+            // Um mesmo processo nao pode ter duas IO no mesmo instante
+            do {
+                sameInstant = 0;
+                IOInitialTime = 1 + (rand() % (serviceTime - 1));
+                printf("Gerei o instante %d \n", IOInitialTime);
+                for (int j = 0; j < i; j++) {
+                    printf("%d = %d", j, generatedInstants[j]);
+                    if (IOInitialTime == generatedInstants[j]) {
+                        printf("Achei instante igual em %d", j);
+                        sameInstant = 1;
+                        break;
+                    }
+                }
+            } while(sameInstant == 1);
+            
+            generatedInstants[i] = IOInitialTime;
+
     		switch (IOType) {
                 case 1:
                     element.deviceQueue = queues->diskQueue; // fila de disco
@@ -262,7 +283,8 @@ Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
                     printf("-- Processo %d tem IO do tipo impressora --\n", pid);
                     break;
                 default:
-                    exitProgram(INVALID_OPTION, "Opcao invalida. Erro ao gerar opcao de IO valida.");
+                    printf("Opcao invalida. Erro ao gerar opcao de IO valida.");
+                    exitProgram(INVALID_OPTION);
     	    }
             element.initialTime = IOInitialTime;
             *IOPtr = element;

@@ -1,4 +1,4 @@
-#include "scheduler_arguments.h"
+#include "headers/scheduler_arguments.h"
 
 int time_slice;
 int disk_timer;
