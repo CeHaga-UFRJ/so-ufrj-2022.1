@@ -52,7 +52,7 @@ Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueue
  * Cria os processos a partir do arquivo input.txt
  */
 Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
-    const char* filename = "input.txt";
+    const char* filename = "in/input.txt";
     FILE* ptr;
     char * line = NULL;
     size_t len = 0;
