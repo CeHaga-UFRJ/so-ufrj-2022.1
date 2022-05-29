@@ -6,8 +6,11 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues);
 Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues) ;
 Process* createRandomProcesses(int *numProcesses, QueueCollection *queues);
 Process* createProcesses(int readProcessesFrom, int *numProcesses, QueueCollection *queues);
+int newIoInitialTime(IOQueueElement *IO, int currentNumberOfIO, int serviceTime);
+int isSameInstant(IOQueueElement *IO, int initialTime, int currentNumberOfIO);
 void sortProcess(Process* processes, int size);
 void sortIO(IOQueueElement* IO, int size);
+
 
 /*
  * Remove espacos iniciais e finais na string
@@ -138,6 +141,10 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
                 }
                 element.initialTime = IOInitialTime;
 
+                if (isSameInstant(IO, IOInitialTime, numIO)) {
+                    exitProgram(INVALID_ARGUMENT, "Argumento inválido. Duas operações de IO não podem começar ao mesmo tempo. Verifique o arquivo 'input.txt'.");
+                }
+
                 *IOPtr = element;
                 IOPtr++;
             }
@@ -229,12 +236,24 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
                         exitProgram(INVALID_OPTION, "Opcao invalida. Escolha uma das seguintes opcoes: 1 para disco, 2 para fita, 3 para impressora, 4 para nenhum.");
                 }
                 
-                if(noMoreIO) break;	
-                printf("Qual o instante de inicio desse IO? (Minimo 1, Maximo %ld)\n", serviceTime - 1);
-                while(readNumberInRange(&IOInitialTime, 1, serviceTime - 1)){
-                    printf("Entre com um numero\n");
-                }
+                if(noMoreIO) break;
+                
+                int sameTime;
+                do {
+                    printf("Qual o instante de inicio desse IO? (Minimo 1, Maximo %ld)\n", serviceTime - 1);
+                    while(readNumberInRange(&IOInitialTime, 1, serviceTime - 1)){
+                        printf("Entre com um numero\n");
+                    }
+                    sameTime = isSameInstant(IO, IOInitialTime, numIO);
+                    if (sameTime) {
+                        printf("Já existe outro IO com esse instante, digite outro\n");
+                    }
+                } while(sameTime);
+
                 element.initialTime = IOInitialTime;
+
+                
+
                 *IOPtr = element;
                 IOPtr++;			
             }
@@ -274,24 +293,15 @@ Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
         IOQueueElement *IOPtr = IO;
 
         if (serviceTime > minIOServiceTime) {
-            for(int k = 0; k < numIO; k++) {
+            for(int currentNumberOfIO = 0; currentNumberOfIO < numIO; currentNumberOfIO++) {
                 // Crio um elemento para a fila de IO
                 IOQueueElement element;
                 IOType = 1 + (rand() % 3);
 
-                // Um mesmo processo nao pode ter duas IO no mesmo instante
-                do {
-                    sameInstant = 0;
-                    IOInitialTime = 1 + (rand() % (serviceTime - 1));
-                    for (int j = 0; j < k; j++) {
-                        if (IOInitialTime == generatedInstants[j]) {
-                            sameInstant = 1;
-                            break;
-                        }
-                    }
-                } while(sameInstant == 1);
                 
-                generatedInstants[k] = IOInitialTime;
+                IOInitialTime = newIoInitialTime(IO, currentNumberOfIO, serviceTime);
+                
+                generatedInstants[currentNumberOfIO] = IOInitialTime;
                 element.type = (char *) malloc(sizeof(char) * 10);
 
                 switch (IOType) {
@@ -363,4 +373,21 @@ void sortIO(IOQueueElement* IO, int size) {
             }     
         }
     }  
+}
+
+int newIoInitialTime(IOQueueElement *IO, int currentNumberOfIO, int serviceTime) {
+    int IOInitialTime;
+    // Um mesmo processo nao pode ter duas IO no mesmo instante
+    do {
+        IOInitialTime = 1 + (rand() % (serviceTime - 1));
+    } while(isSameInstant(IO, IOInitialTime, currentNumberOfIO));
+    return IOInitialTime;
+}
+
+int isSameInstant(IOQueueElement *IO, int initialTime, int currentNumberOfIO) {
+    for (int j = 0; j < currentNumberOfIO; j++) 
+        if (initialTime == (IO+j)->initialTime) 
+            return 1;
+            
+    return 0;
 }
