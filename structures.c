@@ -1,4 +1,4 @@
-#include "structures.h"
+#include "headers/structures.h"
 
 Device* createDevice(int time, char *name);
 ProcessQueueDescriptor* createQueue();

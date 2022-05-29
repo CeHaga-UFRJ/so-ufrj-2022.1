@@ -1,4 +1,4 @@
-#include "scheduler_arguments.h"
+#include "headers/scheduler_arguments.h"
 
 int time_slice;
 int disk_timer;
@@ -13,11 +13,11 @@ int getTapeTimer();
 int getPrinterTimer();
 
 int handleParameter(char *ps){
-    if(ps[0] == '\0') exitProgram(INVALID_NUMBER);
+    if(ps[0] == '\0') exitProgram(INVALID_NUMBER, "Parametro nao possui numero");
 
     int value = 0;
     for(char *s = ps; *s != '\0'; s++){
-        if(*s < '0' || *s > '9') exitProgram(INVALID_NUMBER);
+        if(*s < '0' || *s > '9') exitProgram(INVALID_NUMBER, "Parametro nao possui um numero valido");
 
         value = value * 10 + (*s - '0');
     } 
@@ -32,7 +32,7 @@ void readArgumentsFromConsole(int argc, char *argv[]){
 
     for(int i = 1; i < argc; i++){
         char *arg = argv[i];
-        if(arg[0] != '-' || arg[1] == '\0') exitProgram(INVALID_ARGUMENT);
+        if(arg[0] != '-' || arg[1] == '\0') exitProgram(INVALID_ARGUMENT, "Nao foi passado um argumento valido, use a opcao -h em caso de duvidas");
         char flag = arg[1];
         arg += 2;
         
@@ -50,11 +50,10 @@ void readArgumentsFromConsole(int argc, char *argv[]){
                 printer_timer = handleParameter(arg);
                 break;
             case 'h':
-                printf(HELP);
-                exitProgram(NO_ERROR);
+                exitProgram(HELP, HELP_TEXT);
                 break;
             default:
-                exitProgram(INVALID_ARGUMENT);
+                exitProgram(INVALID_ARGUMENT, "Nao foi passado um argumento valido, use a opcao -h em caso de duvidas");
         }
     }
 }

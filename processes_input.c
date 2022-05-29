@@ -1,4 +1,4 @@
-#include "processes_input.h"
+#include "headers/processes_input.h"
 
 char* trim(char* str);
 Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO);
@@ -52,8 +52,7 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
     ptr = fopen(filename, "r");
 
     if (NULL == ptr) {
-        printf("Falha ao abrir o arquivo de entrada \n");
-        exitProgram(FILE_ERROR);
+        exitProgram(FILE_ERROR, "Falha ao abrir o arquivo de entrada");
     }
 
     while ((read = getline(&line, &len, ptr)) != -1) {
@@ -117,8 +116,7 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
                         element.deviceQueue = queues->tapeQueue; // fila de fita
                         break;
                     default:
-                        printf("Opcao invalida. Escolha uma das seguintes opcoes: 1, 2 ou 3.");
-                        exitProgram(INVALID_OPTION);
+                        exitProgram(INVALID_OPTION, "Opcao invalida. Escolha uma das seguintes opcoes: 1, 2 ou 3.");
                 }
                 element.initialTime = IOInitialTime;
 
@@ -150,62 +148,73 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
 }
 
 Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues) {
-    int choice, i, arrivalTime, serviceTime, numIO;
+    int i, numIO;
+    long choice, arrivalTime, serviceTime;
     int noMoreIO = 0;
     Process *processes = (Process *) malloc(sizeof(Process) * MAX_PROCESSES);
     Process *processesPtr = processes;
 
     for(i = 0; i < MAX_PROCESSES; i++) {
         if (i != 0) {
-            int choice;
             printf("Voce deseja continuar criando processos? Digite 1 para sim e 2 para não.\n");
             printf("Sua escolha: ");
-            scanf("%d", &choice);
+            while(readNumberInRange(&choice, 1, 2)){
+                printf("Opcao invalida, entre com uma das opcoes\n");
+            }
             if (choice == 2) break;
         }
         printf("=== Informacoes do %d° processo === \n", i+1);
         printf("Qual o tempo de chegada do processo? \n");
-        scanf("%d", &arrivalTime);
-        printf("Qual o tempo de serviço do processo? \n");
-        scanf("%d", &serviceTime);
+        while(readNumberWithMin(&arrivalTime, 0)){
+            printf("Entre com um numero\n");
+        }
+        printf("Qual o tempo de serviço do processo? (Minimo 1)\n");
+        while(readNumberWithMin(&serviceTime, 1)){
+            printf("Entre com um numero\n");
+        }
 
         IOQueueElement *IO = (IOQueueElement *) malloc(sizeof(IOQueueElement) * MAX_IO); // array de IO
         IOQueueElement *IOPtr = IO;
 
-        for(numIO = 0; numIO < MAX_IO; numIO++) {
-            numIO == 0 ? printf("Algum dispositivo faz IO? Digite 1 para disco, 2 para fita, 3 para impressora, 4 para nenhum \n") :  printf("Algum outro dispositivo faz IO? D para disco, 1 para disco, 2 para fita, 3 para impressora, 4 para nenhum outro \n");
-            scanf("%d", &choice);
+        if(serviceTime > 1){
+            for(numIO = 0; numIO < MAX_IO; numIO++) {
+                numIO == 0 ? printf("Algum dispositivo faz IO? Digite 1 para disco, 2 para fita, 3 para impressora, 4 para nenhum \n") :  printf("Algum outro dispositivo faz IO? D para disco, 1 para disco, 2 para fita, 3 para impressora, 4 para nenhum outro \n");
+                while(readNumberInRange(&choice, 1, 4)){
+                    printf("Opcao invalida, entre com uma das opcoes\n");
+                }
 
-            // Crio um elemento para a fila de IO
-            IOQueueElement element;
-            int IOInitialTime;
-    		switch (choice) {
-                case 1:
-                    element.deviceQueue = queues->diskQueue; // fila de disco
-                    printf("-- Lendo as informacoes do IO tipo disco --\n");
-                    break;
-                case 2:
-                    element.deviceQueue = queues->tapeQueue; // fila de fita
-                    printf("-- Lendo as informacoes do IO tipo fita --\n");
-                    break;
-                case 3:
-                    element.deviceQueue = queues->printerQueue; // fila de impressora
-                    printf("-- Lendo as informacoes do IO tipo impressora --\n");
-                    break;
-                case 4:
-                    noMoreIO = 1;
-                    break;
-                default:
-                    printf("Opcao invalida. Escolha uma das seguintes opcoes: 1 para disco, 2 para fita, 3 para impressora, 4 para nenhum.");
-                    exitProgram(INVALID_OPTION);
-    	    }
-            
-            if(noMoreIO) break;	
-            printf("Qual o instante de inicio desse IO?\n");
-            scanf("%d", &IOInitialTime);
-            element.initialTime = IOInitialTime;
-            *IOPtr = element;
-            IOPtr++;			
+                // Crio um elemento para a fila de IO
+                IOQueueElement element;
+                long IOInitialTime;
+                switch (choice) {
+                    case 1:
+                        element.deviceQueue = queues->diskQueue; // fila de disco
+                        printf("-- Lendo as informacoes do IO tipo disco --\n");
+                        break;
+                    case 2:
+                        element.deviceQueue = queues->tapeQueue; // fila de fita
+                        printf("-- Lendo as informacoes do IO tipo fita --\n");
+                        break;
+                    case 3:
+                        element.deviceQueue = queues->printerQueue; // fila de impressora
+                        printf("-- Lendo as informacoes do IO tipo impressora --\n");
+                        break;
+                    case 4:
+                        noMoreIO = 1;
+                        break;
+                    default:
+                        exitProgram(INVALID_OPTION, "Opcao invalida. Escolha uma das seguintes opcoes: 1 para disco, 2 para fita, 3 para impressora, 4 para nenhum.");
+                }
+                
+                if(noMoreIO) break;	
+                printf("Qual o instante de inicio desse IO? (Minimo 1, Maximo %ld)\n", serviceTime - 1);
+                while(readNumberInRange(&IOInitialTime, 1, serviceTime - 1)){
+                    printf("Entre com um numero\n");
+                }
+                element.initialTime = IOInitialTime;
+                *IOPtr = element;
+                IOPtr++;			
+            }
         }
         *processesPtr = newProcess(i+1, arrivalTime, serviceTime, numIO, IO);
         //printf("Id do processo = %d\n", processesPtr->pid);
@@ -218,6 +227,7 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
 
 Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
     int i, arrivalTime, serviceTime, numIO, IOType, IOInitialTime, pid;
+    int sameInstant = 0;
     Process *processes = (Process *) malloc(sizeof(Process) * MAX_PROCESSES);
     Process *processesPtr = processes;
 
@@ -230,15 +240,35 @@ Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
         arrivalTime = rand() % 100;
         serviceTime = rand() % 100;
         numIO = rand() % MAX_IO;
+        int *generatedInstants = (int *) calloc(MAX_IO, sizeof(int));
 
         IOQueueElement *IO = (IOQueueElement *) malloc(sizeof(IOQueueElement) * MAX_IO); // array de IO
         IOQueueElement *IOPtr = IO;
+
+        printf("Duracao do processo %d\n", serviceTime);
 
         for(int i = 0; i < numIO; i++) {
             // Crio um elemento para a fila de IO
             IOQueueElement element;
             IOType = 1 + (rand() % 3);
-            IOInitialTime = 1 + (rand() % 3);
+
+            // Um mesmo processo nao pode ter duas IO no mesmo instante
+            do {
+                sameInstant = 0;
+                IOInitialTime = 1 + (rand() % (serviceTime - 1));
+                printf("Gerei o instante %d \n", IOInitialTime);
+                for (int j = 0; j < i; j++) {
+                    printf("%d = %d", j, generatedInstants[j]);
+                    if (IOInitialTime == generatedInstants[j]) {
+                        printf("Achei instante igual em %d", j);
+                        sameInstant = 1;
+                        break;
+                    }
+                }
+            } while(sameInstant == 1);
+            
+            generatedInstants[i] = IOInitialTime;
+
     		switch (IOType) {
                 case 1:
                     element.deviceQueue = queues->diskQueue; // fila de disco
@@ -278,7 +308,6 @@ Process* createProcesses(int readProcessesFrom, int *numProcesses, QueueCollecti
         case 3:
             return createRandomProcesses(numProcesses, queues);
     }
-    printf("Opcao invalida. Por favor, escolha uma das seguintes opcoes: 1, 2 ou 3.");
-    exitProgram(INVALID_OPTION);
+    exitProgram(INVALID_OPTION, "Opcao invalida. Por favor, escolha uma das seguintes opcoes: 1, 2 ou 3.");
     return NULL;
 }

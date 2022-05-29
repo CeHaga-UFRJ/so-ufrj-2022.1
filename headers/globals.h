@@ -2,11 +2,12 @@
 #define __GLOBALS_H__
 
 #define NO_ERROR 0
-#define INVALID_NUMBER 3
-#define INVALID_ARGUMENT 4
+#define HELP 3
+#define INVALID_NUMBER 4
 #define INVALID_OPTION 5
 #define FILE_ERROR 6
-#define HELP \
+#define INVALID_ARGUMENT 7
+#define HELP_TEXT \
 "Simula o funcionamento de um escalonador de processos com escalonamento circular\n\
 Para executar rode:\n\
 \t scheduler [-q#] [-d#] [-t#] [-p#]\n\
@@ -26,6 +27,9 @@ Para executar rode:\n\
 #include <string.h>
 #include <time.h>
 
-extern void exitProgram(int error);
+extern void exitProgram(int error, char *errorMessage);
+extern int readNumber(long *number);
+extern int readNumberWithMin(long *number, long min);
+extern int readNumberInRange(long *number, long min, long max);
 
 #endif
