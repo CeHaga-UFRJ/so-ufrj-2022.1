@@ -1,6 +1,5 @@
 CMPL = cd src && gcc
 WARN = -Wall
-ERROR = -Werror
 OBJS = a.out
 HELP = -h
 QUANTUM = -q
@@ -20,7 +19,7 @@ run:
 help:
 	$(CMPL) $(TARGET) $(WARN) && ./$(OBJS) $(HELP) || true
 
-# ===================== Testes =========================
+# ===== Testes =====
 
 # Teste de input por arquivo correto
 test_create_processes_by_file:

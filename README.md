@@ -40,7 +40,32 @@ Caso queira alterar algum valor default, use os argumentos abaixo:
 ```
 
 ## 🧪 Testes
--- TODO --
+Alguns testes foram pré-configurados no makefile para testar o funcionamento do escalonador.
+
+1. Para testar o funcionamento com base nos processos do arquivo input.txt:
+```
+  make test_create_processes_by_file
+```
+
+2. Para testar o funcionamento a partir do teclado:
+```
+  make test_create_processes_by_keyboard
+```
+
+3. Para testar o funcionamento com processos aleatórios:
+```
+  make test_create_processes_randomly
+```
+
+4. Para testar o funcionamento quando o número máximo de I/O por processo é ultrapassado:
+```
+  make test_max_io
+```
+
+5. Para testar o funcionamento quando o número máximo de processos é ultrapassado:
+```
+  make test_max_processes
+```
 
 ## 👩‍💻 Autores
 * Carlos Henrique Bravo Serrado
