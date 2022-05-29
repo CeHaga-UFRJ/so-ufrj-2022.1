@@ -47,6 +47,7 @@ struct ProcessQueueDescriptor{
 
 struct IOQueueElement{
     ProcessQueueDescriptor *deviceQueue;
+    char* type; // descritor somente por necessidades de output no console
     int initialTime;
 };
 

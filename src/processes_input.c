@@ -33,7 +33,7 @@ char* trim(char* str) {
  * Cria um novo processo dada suas informacoes
  */
 Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO) {
-    printf("=== Criando o processo %d ===\n\n", pid);
+    printf("=== Criando o processo %d ===\n", pid);
     Process process;
     process.pid = pid;
     process.status = READY; 
@@ -44,6 +44,16 @@ Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueue
     process.actualIO = 0;
     process.numIO = numIO;
     process.IO = IO;
+
+    printf("-> Tempo de chegada: %d \n-> Tempo de serviço: %d \n-> Quantidade de IOs: %d \n", arrivalTime, serviceTime, numIO);
+    IOQueueElement *IOPtr = IO;
+
+    for (int i = 0; i < numIO; i++) {
+        printf("-> IO do tipo %s no instante %d\n", IOPtr->type, IOPtr->initialTime);
+        IOPtr++;
+    }
+
+    printf("\n");
 
     return process;
 }
@@ -112,13 +122,16 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
                 IOQueueElement element;
                 switch (IOType) {
                     case 'D':
-                        element.deviceQueue = queues->diskQueue; // fila de disco
+                        element.deviceQueue = queues->diskQueue; 
+                        element.type = "disco";
                         break;
                     case 'I':
-                        element.deviceQueue = queues->printerQueue; // fila de impressora
+                        element.deviceQueue = queues->printerQueue; 
+                        element.type = "impressora";
                         break;
                     case 'F':
-                        element.deviceQueue = queues->tapeQueue; // fila de fita
+                        element.deviceQueue = queues->tapeQueue; 
+                        element.type = "fita";
                         break;
                     default:
                         exitProgram(INVALID_OPTION, "Opcao invalida. Escolha uma das seguintes opcoes: 1, 2 ou 3.");
@@ -194,15 +207,18 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
                 long IOInitialTime;
                 switch (choice) {
                     case 1:
-                        element.deviceQueue = queues->diskQueue; // fila de disco
+                        element.deviceQueue = queues->diskQueue; 
+                        element.type = "disco";
                         printf("-- Lendo as informacoes do IO tipo disco --\n");
                         break;
                     case 2:
-                        element.deviceQueue = queues->tapeQueue; // fila de fita
+                        element.deviceQueue = queues->tapeQueue;
+                        element.type = "fita";
                         printf("-- Lendo as informacoes do IO tipo fita --\n");
                         break;
                     case 3:
-                        element.deviceQueue = queues->printerQueue; // fila de impressora
+                        element.deviceQueue = queues->printerQueue;
+                        element.type = "impressora";
                         printf("-- Lendo as informacoes do IO tipo impressora --\n");
                         break;
                     case 4:
@@ -275,19 +291,20 @@ Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
                 } while(sameInstant == 1);
                 
                 generatedInstants[k] = IOInitialTime;
+                element.type = (char *) malloc(sizeof(char) * 10);
 
                 switch (IOType) {
                     case 1:
-                        element.deviceQueue = queues->diskQueue; // fila de disco
-                        printf("-- Processo %d tem IO do tipo disco --\n", pid);
+                        element.deviceQueue = queues->diskQueue; 
+                        element.type = "disco";
                         break;
                     case 2:
-                        element.deviceQueue = queues->tapeQueue; // fila de fita
-                        printf("-- Processo %d tem IO do tipo fita --\n", pid);
+                        element.deviceQueue = queues->tapeQueue; 
+                        element.type = "fita";
                         break;
                     case 3:
-                        element.deviceQueue = queues->printerQueue; // fila de impressora
-                        printf("-- Processo %d tem IO do tipo impressora --\n", pid);
+                        element.deviceQueue = queues->printerQueue;
+                        element.type = "impressora";
                         break;
                     default:
                         printf("Opcao invalida. Erro ao gerar opcao de IO valida.");
@@ -298,9 +315,8 @@ Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
                 IOPtr++;			
             }
             sortIO(IO, numIO);
-        }
+        } else numIO = 0;
 
-        if (numIO == 0 || serviceTime < minIOServiceTime) printf("-- Processo %d nao tem IO --\n", pid);
         *processesPtr = newProcess(pid, arrivalTime, serviceTime, numIO, IO);
         processesPtr++;
     }
