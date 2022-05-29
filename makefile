@@ -11,9 +11,10 @@ QUANTUM_SIZE=4
 DISK_OP_SIZE=3
 TAPE_OP_SIZE=5
 PRINTER_OP_SIZE=8
+EXE=./$(OBJS) $(QUANTUM)$(QUANTUM_SIZE) $(DISK)$(DISK_OP_SIZE) $(TAPE)$(TAPE_OP_SIZE) $(PRINTER)$(PRINTER_OP_SIZE)
 
 run:
-	$(CMPL) $(TARGET) $(WARN) && ./$(OBJS) $(QUANTUM)$(QUANTUM_SIZE) $(DISK)$(DISK_OP_SIZE) $(TAPE)$(TAPE_OP_SIZE) $(PRINTER)$(PRINTER_OP_SIZE)
+	$(CMPL) $(TARGET) $(WARN) && $(EXE)
 
 get-help:
 	$(CMPL) $(TARGET) $(WARN) && ./$(OBJS) $(HELP)
@@ -22,24 +23,21 @@ get-help:
 
 #Teste de input inválido do menu
 test1:
-	$(CMPL) $(TARGET)
-	echo w | ./$(OBJS) $(QUANTUM)5 $(DISK_READ)5 $(TAPE_READ)5 $(PRINTER_READ)5
+	$(CMPL) $(TARGET) && echo w | $(EXE)
 
 #Expected to
 
 #Teste de input por arquivo correto
 test2:
-	$(CMPL) $(TARGET)
-	printf "1, 13, 0, D-2/D-4/I-9 \n3, 2, 1 \n2, 15, 13, F-1/D-7" > input.txt
-	echo 1 | ./$(OBJS) $(QUANTUM)5 $(DISK_READ)5 $(TAPE_READ)5 $(PRINTER_READ)5
+	printf "1, 13, 0, D-2/D-4/I-9 \n3, 2, 1 \n2, 15, 13, F-1/D-7" > in/input.txt
+	$(CMPL) $(TARGET) && echo 1 | $(EXE)
 
 #Expected to
 
 #Teste de input por arquivo com número de I/Os maior que o permitido
 test3:
-	$(CMPL) $(TARGET)
 	printf "1, 13, 0, D-2/D-4/I-9/F-5 \n3, 2, 1 \n2, 15, 13, F-1/D-7" > input.txt
-	echo 1 | ./$(OBJS) $(QUANTUM)5 $(DISK_READ)5 $(TAPE_READ)5 $(PRINTER_READ)5
+	$(CMPL) $(TARGET) && echo 1 | $(EXE)
 
 #Expected to
 
