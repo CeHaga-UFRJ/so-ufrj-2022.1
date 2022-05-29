@@ -28,5 +28,8 @@ Para executar rode:\n\
 #include <time.h>
 
 extern void exitProgram(int error, char *errorMessage);
+extern int readNumber(long *number);
+extern int readNumberWithMin(long *number, long min);
+extern int readNumberInRange(long *number, long min, long max);
 
 #endif
