@@ -1,33 +1,24 @@
 CMPL=cd src && gcc
+WARN=-Wall
+OBJS=a.out
 HELP=-h
 QUANTUM= -q
-DISK_READ= -d
-TAPE_READ= -t
-PRINTER_READ= -p
+DISK= -d
+TAPE= -t
+PRINTER= -p
 TARGET=*.c
-QNTM_SIZE=4
-DREAD_SIZE=5
-TREAD_SIZE=2
-PREAD_SIZE=2
-OBJS=a.out
+QUANTUM_SIZE=4
+DISK_OP_SIZE=3
+TAPE_OP_SIZE=5
+PRINTER_OP_SIZE=8
 
-help:
-	$(CMPL) $(TARGET) && ./$(OBJS) $(HELP)
+run:
+	$(CMPL) $(TARGET) $(WARN) && ./$(OBJS) $(QUANTUM)$(QUANTUM_SIZE) $(DISK)$(DISK_OP_SIZE) $(TAPE)$(TAPE_OP_SIZE) $(PRINTER)$(PRINTER_OP_SIZE)
 
-quantum:
-	$(CMPL) $(TARGET) && ./$(OBJS) $(QUANTUM)$(QNTM_SIZE)
+get-help:
+	$(CMPL) $(TARGET) $(WARN) && ./$(OBJS) $(HELP)
 
-disk_readt:
-	$(CMPL) $(TARGET) && ./$(OBJS) $(DISK_READ)$(DREAD_SIZE)
-
-tape_readt:
-	$(CMPL) $(TARGET) && ./$(OBJS) $(TAPE_READ)$(TREAD_SIZE)
-
-printer_readt:
-	$(CMPL) $(TARGET) && ./$(OBJS) $(PRINTER_READ)$(PREAD_SIZE)
-
-
-#=====================TESTES=========================
+# ===================== Testes =========================
 
 #Teste de input inválido do menu
 test1:

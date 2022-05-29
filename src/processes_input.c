@@ -33,7 +33,7 @@ char* trim(char* str) {
  * Cria um novo processo dada suas informacoes
  */
 Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO) {
-    printf("Criando o processo %d\n", pid);
+    printf("=== Criando o processo %d ===\n\n", pid);
     Process process;
     process.pid = pid;
     process.status = READY; 

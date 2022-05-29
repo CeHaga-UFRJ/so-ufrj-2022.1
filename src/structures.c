@@ -83,7 +83,7 @@ StructureCollection* createStructures(int readProcessesFrom){
 
     collection->processes = createProcesses(readProcessesFrom, &collection->numProcesses, collection->queues);
     collection->actualProcessIndex = 0;
-    printf("%d processo(s) criado(s)\n", collection->numProcesses);
+    printf("%d processo(s) criado(s) com sucesso\n\n", collection->numProcesses);
 
     return collection;
 }
