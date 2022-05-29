@@ -128,6 +128,7 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
                 *IOPtr = element;
                 IOPtr++;
             }
+            sortIO(IO, numIO);
             if(pt) {
                 printf("Existem mais entradas e saidas do que o maximo permitido. O processo %d sera executado com somente %d entradas e saidas.\n", pid, MAX_IO);
             }
@@ -145,6 +146,7 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
     fclose(ptr);
     if (line) free(line);
 
+    sortProcess(processes, *numProcesses);
     return processes;
 }
 
@@ -219,12 +221,14 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
                 *IOPtr = element;
                 IOPtr++;			
             }
+            sortIO(IO, numIO);
         }
         *processesPtr = newProcess(i+1, arrivalTime, serviceTime, numIO, IO);
         processesPtr++;
     }
     *numProcesses = i;
 
+    sortProcess(processes, *numProcesses);
     return processes;
 }
 
