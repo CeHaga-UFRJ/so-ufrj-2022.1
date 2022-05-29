@@ -7,6 +7,9 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
 Process* createRandomProcesses(int *numProcesses, QueueCollection *queues);
 Process* createProcesses(int readProcessesFrom, int *numProcesses, QueueCollection *queues);
 
+/*
+ * Remove espacos iniciais e finais na string
+ */
 char* trim(char* str) {
     static char str1[99];
     int count = 0, j, k;
@@ -24,6 +27,9 @@ char* trim(char* str) {
     return str1;
 }
 
+/*
+ * Cria um novo processo dada suas informacoes
+ */
 Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO) {
     printf("Criando o processo %d\n", pid);
     Process process;
@@ -40,13 +46,18 @@ Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueue
     return process;
 }
 
+/*
+ * Cria os processos a partir do arquivo input.txt
+ */
 Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
     const char* filename = "input.txt";
     FILE* ptr;
     char * line = NULL;
     size_t len = 0;
     size_t read;
-    Process *processes = (Process *) malloc(sizeof(Process) * MAX_PROCESSES); // crio array de processos
+
+    // Array de processos
+    Process *processes = (Process *) malloc(sizeof(Process) * MAX_PROCESSES);
     Process *processesPtr = processes;
  
     ptr = fopen(filename, "r");
@@ -56,44 +67,39 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
     }
 
     while ((read = getline(&line, &len, ptr)) != -1) {
-        // printf("%s", line);
-
         char *pt = strtok(line, ",");
         char *part;
         int pid, serviceTime, arrivalTime;
 
+        // Leitura pid
         part = trim(pt);
         pt = strtok(NULL, ",");
         pid = atoi(part);
-        // printf("%d\n", pid);
 
+        // Leitura tempo de servico
         part = trim(pt);
         pt = strtok(NULL, ",");
         serviceTime = atoi(part);
-        // printf("%d\n", serviceTime);
 
+        // Leitura tempo de chegada
         part = trim(pt);
         pt = strtok(NULL, ",");
         arrivalTime = atoi(part);
-        // printf("%d\n", arrivalTime);
-        printf("80 %s\n", pt);
+
         IOQueueElement *IO;
         int numIO = 0;
 
+        // Se houver IO
         if(pt){
-
             char *IOLine = trim(pt);
-            // printf("%s\n", IOLine);
-            printf("84 %s\n", IOLine);
 
             pt = strtok(IOLine, "/");
 
-            printf("89 %s\n", IOLine);
-
-            IO = (IOQueueElement *) malloc(sizeof(IOQueueElement) * MAX_IO); // crio o array de elementos de fila de IO
+            // Array de elementos de fila de IO
+            IO = (IOQueueElement *) malloc(sizeof(IOQueueElement) * MAX_IO);
             IOQueueElement *IOPtr = IO;
 
-            // Para a linha de IO, vamos percorrer até chegar no máximo de IO permitido ou até os IOS acabarem
+            // Para a linha de IO, vamos percorrer ate chegar no maximo de IO permitido ou ate os IOS acabarem
             for (numIO = 0; numIO < MAX_IO; numIO++) {
                 part = pt;
                 if (part) {
@@ -122,22 +128,18 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
 
                 *IOPtr = element;
                 IOPtr++;
-
-                // printf("%c\n", IOType);
-                // printf("%d\n", IOInitialTime);
             }
             if(pt) {
-                printf("Existem mais entradas e saidas do que o maximo permitido. O processo %d será executado com somente %d entradas e saidas.\n", pid, MAX_IO);
+                printf("Existem mais entradas e saidas do que o maximo permitido. O processo %d sera executado com somente %d entradas e saidas.\n", pid, MAX_IO);
             }
         }
         (*numProcesses)++;
         if(*numProcesses > MAX_PROCESSES) {
-            printf("Existem mais processos do que o maximo permitido. Somente %d processos serão executados.\n", MAX_PROCESSES);
+            printf("Existem mais processos do que o maximo permitido. Somente %d processos serao executados.\n", MAX_PROCESSES);
             break;
         }
 
         *processesPtr = newProcess(pid, arrivalTime, serviceTime, numIO, IO);
-        // printf("Id do processo = %d\n", processesPtr->pid);
         processesPtr++;
     }
     
@@ -147,6 +149,9 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
     return processes;
 }
 
+/*
+ * Cria os processos a partir da leitura da stdin
+ */
 Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues) {
     int i, numIO;
     long choice, arrivalTime, serviceTime;
@@ -164,7 +169,7 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
             if (choice == 2) break;
         }
         printf("=== Informacoes do %d° processo === \n", i+1);
-        printf("Qual o tempo de chegada do processo? \n");
+        printf("Qual o tempo de chegada do processo? (Minimo 0)\n");
         while(readNumberWithMin(&arrivalTime, 0)){
             printf("Entre com um numero\n");
         }
@@ -217,7 +222,6 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
             }
         }
         *processesPtr = newProcess(i+1, arrivalTime, serviceTime, numIO, IO);
-        //printf("Id do processo = %d\n", processesPtr->pid);
         processesPtr++;
     }
     *numProcesses = i;
@@ -225,6 +229,9 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
     return processes;
 }
 
+/*
+ * Cria os processos a partir de numeros aleatorios
+ */
 Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
     int i, arrivalTime, serviceTime, numIO, IOType, IOInitialTime, pid;
     int sameInstant = 0;
@@ -283,8 +290,7 @@ Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
                     printf("-- Processo %d tem IO do tipo impressora --\n", pid);
                     break;
                 default:
-                    printf("Opcao invalida. Erro ao gerar opcao de IO valida.");
-                    exitProgram(INVALID_OPTION);
+                    exitProgram(INVALID_OPTION, "Opcao invalida. Erro ao gerar opcao de IO valida.");
     	    }
             element.initialTime = IOInitialTime;
             *IOPtr = element;
@@ -298,6 +304,9 @@ Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
     return processes;
 }
 
+/*
+ * Menu de criacao de processos
+ */
 Process* createProcesses(int readProcessesFrom, int *numProcesses, QueueCollection *queues) {
     *numProcesses = 0;
     switch (readProcessesFrom) {
@@ -308,6 +317,5 @@ Process* createProcesses(int readProcessesFrom, int *numProcesses, QueueCollecti
         case 3:
             return createRandomProcesses(numProcesses, queues);
     }
-    exitProgram(INVALID_OPTION, "Opcao invalida. Por favor, escolha uma das seguintes opcoes: 1, 2 ou 3.");
     return NULL;
 }
