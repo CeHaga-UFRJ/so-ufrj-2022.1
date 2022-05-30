@@ -8,7 +8,7 @@ typedef struct Process Process;
 typedef struct Device Device;
 typedef struct ProcessQueueElement ProcessQueueElement;
 typedef struct ProcessQueueDescriptor ProcessQueueDescriptor;
-typedef struct IOQueueElement IOQueueElement;
+typedef struct IOElement IOElement;
 typedef struct QueueCollection QueueCollection;
 typedef struct DeviceCollection DeviceCollection;
 typedef struct StructureCollection StructureCollection;
@@ -25,7 +25,7 @@ struct Process{
 
     int actualIO;
     int numIO;
-    IOQueueElement *IO;
+    IOElement *IO;
 };
 
 struct Device{
@@ -45,7 +45,7 @@ struct ProcessQueueDescriptor{
     ProcessQueueElement *tail;
 };
 
-struct IOQueueElement{
+struct IOElement{
     ProcessQueueDescriptor *deviceQueue;
     char* type; // descritor somente por necessidades de output no console
     int initialTime;

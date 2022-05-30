@@ -1,15 +1,15 @@
 #include "../headers/processes_input.h"
 
 char* trim(char* str);
-Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO);
+Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOElement *IO);
 Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues);
 Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues) ;
 Process* createRandomProcesses(int *numProcesses, QueueCollection *queues);
 Process* createProcesses(int readProcessesFrom, int *numProcesses, QueueCollection *queues);
-int newIoInitialTime(IOQueueElement *IO, int currentNumberOfIO, int serviceTime);
-int isSameInstant(IOQueueElement *IO, int initialTime, int currentNumberOfIO);
+int newIoInitialTime(IOElement *IO, int currentNumberOfIO, int serviceTime);
+int isSameInstant(IOElement *IO, int initialTime, int currentNumberOfIO);
 void sortProcess(Process* processes, int size);
-void sortIO(IOQueueElement* IO, int size);
+void sortIO(IOElement* IO, int size);
 
 
 /*
@@ -35,7 +35,7 @@ char* trim(char* str) {
 /*
  * Cria um novo processo dada suas informacoes
  */
-Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueueElement *IO) {
+Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOElement *IO) {
     printf("=== Criando o processo %d ===\n", pid);
     Process process;
     process.pid = pid;
@@ -49,7 +49,7 @@ Process newProcess(int pid, int arrivalTime, int serviceTime, int numIO, IOQueue
     process.IO = IO;
 
     printf("-> Tempo de chegada: %d \n-> Tempo de serviço: %d \n-> Quantidade de IOs: %d \n", arrivalTime, serviceTime, numIO);
-    IOQueueElement *IOPtr = IO;
+    IOElement *IOPtr = IO;
 
     for (int i = 0; i < numIO; i++) {
         printf("-> IO do tipo %s no instante %d\n", IOPtr->type, IOPtr->initialTime);
@@ -101,15 +101,15 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
         pt = strtok(NULL, ",");
         arrivalTime = atoi(part);
         
-        IOQueueElement *IO = NULL;
+        IOElement *IO = NULL;
         int numIO = 0;
 
         // Se tiver IO
         if(pt){
             char *IOLine = trim(pt);
             pt = strtok(IOLine, "/");
-            IO = (IOQueueElement *) malloc(sizeof(IOQueueElement) * MAX_IO); // crio o array de elementos de fila de IO
-            IOQueueElement *IOPtr = IO;
+            IO = (IOElement *) malloc(sizeof(IOElement) * MAX_IO); // crio o array de elementos de fila de IO
+            IOElement *IOPtr = IO;
 
             // Para a linha de IO, vamos percorrer ate chegar no maximo de IO permitido ou ate os IOS acabarem
             for (numIO = 0; numIO < MAX_IO; numIO++) {
@@ -122,7 +122,7 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
                 int IOInitialTime = part[2] - '0';
 
                 // Crio um elemento da fila de IO
-                IOQueueElement element;
+                IOElement element;
                 switch (IOType) {
                     case 'D':
                         element.deviceQueue = queues->diskQueue; 
@@ -200,8 +200,8 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
             printf("Entre com um numero\n");
         }
 
-        IOQueueElement *IO = (IOQueueElement *) malloc(sizeof(IOQueueElement) * MAX_IO); // array de IO
-        IOQueueElement *IOPtr = IO;
+        IOElement *IO = (IOElement *) malloc(sizeof(IOElement) * MAX_IO); // array de IO
+        IOElement *IOPtr = IO;
 
         if(serviceTime > 1){
             for(numIO = 0; numIO < MAX_IO; numIO++) {
@@ -211,7 +211,7 @@ Process* createProcessesFromKeyboard(int *numProcesses, QueueCollection *queues)
                 }
 
                 // Crio um elemento para a fila de IO
-                IOQueueElement element;
+                IOElement element;
                 long IOInitialTime;
                 switch (choice) {
                     case 1:
@@ -288,13 +288,13 @@ Process* createRandomProcesses(int *numProcesses, QueueCollection *queues) {
         numIO = (rand() % MAX_IO) % serviceTime;
         int *generatedInstants = (int *) calloc(MAX_IO, sizeof(int));
 
-        IOQueueElement *IO = (IOQueueElement *) malloc(sizeof(IOQueueElement) * MAX_IO); // array de IO
-        IOQueueElement *IOPtr = IO;
+        IOElement *IO = (IOElement *) malloc(sizeof(IOElement) * MAX_IO); // array de IO
+        IOElement *IOPtr = IO;
 
         if (serviceTime > minIOServiceTime) {
             for(int currentNumberOfIO = 0; currentNumberOfIO < numIO; currentNumberOfIO++) {
                 // Crio um elemento para a fila de IO
-                IOQueueElement element;
+                IOElement element;
                 IOType = 1 + (rand() % 3);
 
                 
@@ -362,11 +362,11 @@ void sortProcess(Process* processes, int size) {
     }   
 }
 
-void sortIO(IOQueueElement* IO, int size) {
+void sortIO(IOElement* IO, int size) {
     for (int i = 0; i < size; i++) {
         for (int j = i+1; j < size; j++) {
             if ((IO+i)->initialTime > (IO+j)->initialTime) {
-                IOQueueElement aux = *(IO+j);
+                IOElement aux = *(IO+j);
                 *(IO+j) = *(IO+i);
                 *(IO+i) = aux;
             }     
@@ -374,7 +374,7 @@ void sortIO(IOQueueElement* IO, int size) {
     }  
 }
 
-int newIoInitialTime(IOQueueElement *IO, int currentNumberOfIO, int serviceTime) {
+int newIoInitialTime(IOElement *IO, int currentNumberOfIO, int serviceTime) {
     int IOInitialTime;
     // Um mesmo processo nao pode ter duas IO no mesmo instante
     do {
@@ -383,7 +383,7 @@ int newIoInitialTime(IOQueueElement *IO, int currentNumberOfIO, int serviceTime)
     return IOInitialTime;
 }
 
-int isSameInstant(IOQueueElement *IO, int initialTime, int currentNumberOfIO) {
+int isSameInstant(IOElement *IO, int initialTime, int currentNumberOfIO) {
     for (int j = 0; j < currentNumberOfIO; j++) 
         if (initialTime == (IO+j)->initialTime) 
             return 1;
