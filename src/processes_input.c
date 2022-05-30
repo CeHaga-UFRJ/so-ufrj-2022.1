@@ -101,7 +101,7 @@ Process* createProcessesFromFile(int *numProcesses, QueueCollection *queues) {
         pt = strtok(NULL, ",");
         arrivalTime = atoi(part);
         
-        IOQueueElement *IO;
+        IOQueueElement *IO = NULL;
         int numIO = 0;
 
         // Se tiver IO

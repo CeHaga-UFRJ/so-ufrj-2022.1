@@ -83,7 +83,7 @@ void addNewProcessToQueue(int instant, ProcessQueueDescriptor *queue, StructureC
     while(structures->actualProcessIndex < structures->numProcesses && structures->processes[structures->actualProcessIndex].arrivalTime == instant){
         Process *actualProcess = &structures->processes[structures->actualProcessIndex];
         addQueue(queue, actualProcess);
-        printf("Processo %d criado no instante %d\n", actualProcess->pid, instant);
+        printf("Processo %d escalonado no instante %d\n", actualProcess->pid, instant);
         structures->actualProcessIndex++;
     }
 }
