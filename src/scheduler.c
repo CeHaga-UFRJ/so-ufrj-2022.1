@@ -104,6 +104,7 @@ void killProcess(Device *cpu, int *killedProcesses){
  */
 void checkProcessIO(Device *cpu){
     if(!cpu->actualProcess) return;
+    if(!cpu->actualProcess->IO) return;
 
     if (cpu->actualProcess->IO->initialTime == cpu->actualProcess->processedTime) {
         ProcessQueueDescriptor *device = cpu->actualProcess->IO->deviceQueue;
