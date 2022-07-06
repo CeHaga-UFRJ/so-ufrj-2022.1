@@ -4,27 +4,34 @@
 #include <time.h>
 #include "../headers/structures.h"
 
+int requestPage();
+void pageFault(Process *process, int pageNumber);
+int getOldestProcess();
+
 int activeProcesses = 0;
 int lastProcessRemoved = 0;
+
+Process* processes[MAX_PROCESSES];
+RAM *ram;
 
 int main(){
     srand(time(NULL));
 
-    Process* processes[MAX_PROCESSES];
-    TLB* table = createTable();
+    ram = createRam();
     
     while(1){
         for(int i = 0; i < activeProcesses; i++){
             int requestedPage = requestPage();
             printf("? Processo %d solicitando pagina %d\n", i, requestedPage);
 
-            Page *readPage = readPageFromWorkingSet(processes[i], requestedPage);
+            int address = readPageFromWorkingSet(processes[i], requestedPage);
 
-            if(readPage){
-                printf("$ Pagina encontrada no WS\n");
+            if(address != -1){
+                printf("$ Pagina encontrada no endereco %d\n",address);
             }else{
-                pageFault(processes[i], table, requestedPage);
+                pageFault(processes[i], requestedPage);
             }
+            printTLB(processes[i]);
         }
         if(activeProcesses < MAX_PROCESSES) {
             processes[activeProcesses] = createProcess(activeProcesses);
@@ -32,8 +39,11 @@ int main(){
             int requestedPage = requestPage();
             printf("+ Processo %d foi criado e esta solicitando pagina %d\n", activeProcesses, requestedPage);
 
+            pageFault(processes[activeProcesses], requestedPage);
 
             activeProcesses++;
+
+            printTLB(processes[activeProcesses - 1]);
         }
         sleep(3);
     }
@@ -44,16 +54,28 @@ int requestPage(){
     return rand() % NUM_PAGES;
 }
 
-void pageFault(Process *process, TLB *table, int pageNumber){
+void pageFault(Process *process, int pageNumber){
     if(process->workingSet->remainingSlots == 0){
-        removeLeastUsedPage(process);
-        addPageToWorkingSet(process, pageNumber);
+        int leastUsedPage = removeLeastUsedPage(process);
+        removePageFromRAM(ram, leastUsedPage);
+
+        int address = addPageToRAM(ram);
+        addPageToWorkingSet(process, pageNumber, address);
+
+        printf("X Pagina %d removida. Pagina %d sera adicionada no endereco %d\n", leastUsedPage, pageNumber, address);
     }else{
-        if(1){
-            removeProcessFromTLB(table, getOldestProcess());
+        if(isRAMFull(ram)){
+            int oldestPid = getOldestProcess();
+            Process *oldestProcess = processes[oldestPid];
+            while(!isWSEmpty(oldestProcess)){
+                int removePage = removeLeastUsedPage(oldestProcess);
+                removePageFromRAM(ram, removePage);
+            }
+            printf("! Memoria principal cheia, o processo %d sera removido\n", oldestPid);
         }
-        Page *addedPage = addPageToWorkingSet(process, pageNumber);
-        addPageToTLB(table, addedPage);
+        int address = addPageToRAM(ram);
+        addPageToWorkingSet(process, pageNumber, address);
+        printf("> Pagina %d adicionada no endereco %d\n", pageNumber, address);
     }
 }
 

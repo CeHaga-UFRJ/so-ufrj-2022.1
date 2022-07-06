@@ -1,13 +1,15 @@
 #include "../headers/structures.h"
-#include <stdlib.h>
 
-Page* readPageFromWorkingSet(Process *process, int pageNumber);
-void removeProcessFromTLB(TLB *table, int pid);
+int readPageFromWorkingSet(Process *process, int pageNumber);
 Process* createProcess(int pid);
-TLB* createTable();
-Page* addPageToWorkingSet(Process *process, int pageNumber);
-void removeLeastUsedPage(Process *process);
-void addPageToTLB(TLB *table, Page *addedPage);
+RAM* createRam();
+void addPageToWorkingSet(Process *process, int pageNumber, int address);
+int removeLeastUsedPage(Process *process);
+void removePageFromRAM(RAM *ram, int page);
+int addPageToRAM(RAM *ram);
+int isRAMFull(RAM *ram);
+int isWSEmpty(Process *process);
+void printTLB(Process *process);
 
 Process* createProcess(int pid){
     Process *process = (Process *)malloc(sizeof(Process));
@@ -22,50 +24,46 @@ Process* createProcess(int pid){
         exit(PROCESS_CREATION_ERROR);
     }
 
-    //process->workingSet->head = NULL;
-    //process->workingSet->tail = NULL;
-    //process->workingSet->remainingSlots = WORKING_SET_LIMIT;
-    cleanWorkingSetList(process->workingSet);
+    process->workingSet->head = NULL;
+    process->workingSet->tail = NULL;
+    process->workingSet->remainingSlots = WORKING_SET_LIMIT;
+
+    for(int i = 0; i < NUM_PAGES; i++){
+        process->workingSet->rows[i] = -1;
+    }
+    // cleanWorkingSetList(process->workingSet);
 
     return process;
 }
 
-TLB* createTable(){
-    TLB* table = (TLB *)malloc(sizeof(TLB));
+RAM* createRam(){
+    RAM* ram = (RAM *)malloc(sizeof(RAM));
 
-    if(!table){
-        exit(TABLE_CREATION_ERROR);
+    if(!ram){
+        exit(RAM_CREATION_ERROR);
     }
 
-    table->remainingSlots = FRAMES;
-    
-    return table;
-}
-
-// TO-DO
-// Da ruim ao apagar no inicio ou final
-void removeProcessFromTLB(TLB *table, int pid){
+    ram->remainingSlots = FRAMES;
     for(int i = 0; i < FRAMES; i++){
-        if(table->rows[i]->pid == pid){
-            free(table->rows[i]);
-            table->remainingSlots++;
-        }
+        ram->addresses[i] = 0;
     }
+    
+    return ram;
 }
 
 void cleanWorkingSet(Process *process){
     process->workingSet->remainingSlots = WORKING_SET_LIMIT;
     PageElement *element = process->workingSet->head;
 
-    while(element != NULL){
-        PageElement *aux = element;
+    while(element->next != NULL){
         element = element->next;
-        free(aux);
+        free(element->prev);
     }
+    free(element);
 
-    //process->workingSet->head = NULL;
-    //process->workingSet->tail = NULL;
-    cleanWorkingSetList(process->workingSet);
+    process->workingSet->head = NULL;
+    process->workingSet->tail = NULL;
+    // cleanWorkingSetList(process->workingSet);
 }
 
 void cleanWorkingSetList(WS* workingSet) {
@@ -76,10 +74,16 @@ void cleanWorkingSetList(WS* workingSet) {
     * Descricao: Remove a pagina menos recentemente usada do WS do processo 
     * Parametros: O processo 
 */
-void removeLeastUsedPage(Process *process){
+int removeLeastUsedPage(Process *process){
+    int page = process->workingSet->head->pageNumber;
+    
     process->workingSet->head = process->workingSet->head->next;
     process->workingSet->head->prev = NULL;
     process->workingSet->remainingSlots++;
+
+    process->workingSet->rows[page] = -1;
+
+    return page;
 }
 
 // TO-DO
@@ -90,20 +94,23 @@ void removeLeastUsedPage(Process *process){
     * Parametros: O processo e o numero da pagina desejada para adicao
     * Retorno: A pagina adicionada no WS do processo
 */
-Page* addPageToWorkingSet(Process *process, int pageNumber){
-    process->workingSet->tail->next = (PageElement *)malloc(sizeof(PageElement));
-    process->workingSet->tail->next->prev = process->workingSet->tail;
-    process->workingSet->tail->next->next = NULL;
-
-    process->workingSet->tail = process->workingSet->tail->next;
+void addPageToWorkingSet(Process *process, int pageNumber, int address){
+    if(process->workingSet->head == NULL){
+        process->workingSet->head = (PageElement *)malloc(sizeof(PageElement));
+        process->workingSet->tail = process->workingSet->head;
+        process->workingSet->tail->next = NULL;
+        process->workingSet->tail->prev = NULL;
+    }else{
+        process->workingSet->tail->next = (PageElement *)malloc(sizeof(PageElement));
+        process->workingSet->tail->next->prev = process->workingSet->tail;
+        process->workingSet->tail->next->next = NULL;
+        process->workingSet->tail = process->workingSet->tail->next;
+    }
+    
     process->workingSet->remainingSlots--;
+    process->workingSet->tail->pageNumber = pageNumber;
 
-    Page *page = (Page *) malloc(sizeof(Page));
-    page->pid = process->pid;
-    page->pageNumber = pageNumber;
-    process->workingSet->tail->page = page;
-
-    return page;
+    process->workingSet->rows[pageNumber] = address;
 }
 
 // TODO
@@ -114,10 +121,10 @@ Page* addPageToWorkingSet(Process *process, int pageNumber){
     * Parametros: O processo e o numero da pagina desejada para leitura
     * Retorno: Retorna a pagina caso ela exista no WS ou null caso contrario
 */
-Page* readPageFromWorkingSet(Process *process, int pageNumber){
+int readPageFromWorkingSet(Process *process, int pageNumber){
     PageElement *element = process->workingSet->head;
     while(element != NULL){
-        if(element->page->pageNumber == pageNumber){
+        if(element->pageNumber == pageNumber){
             // Retira elemento da lista
             if(element->prev) element->prev->next = element->next;
             else process->workingSet->head = element->next;
@@ -131,29 +138,43 @@ Page* readPageFromWorkingSet(Process *process, int pageNumber){
             element->next = NULL;
             process->workingSet->tail = element;
 
-            return element;
+            return process->workingSet->rows[pageNumber];
         }
+        element = element->next;
     }
-    return NULL;
+    return -1;
 }
 
-/* 
-    * Descricao: Adiciona pagina na tabela de paginas virtuais 
-    * Parametros: tabela de paginacao virtual e pagina a ser adicionada
-*/
-void addPageToTLB(TLB *table, Page *addedPage){
+int addPageToRAM(RAM *ram){
     for(int i = 0; i < FRAMES; i++){
-        if(table->rows[i] == NULL){
-            table->rows[i] = addedPage;
-            table->remainingSlots--;
-            break;
+        if(ram->addresses[i] == 0){
+            ram->addresses[i] = 1;
+            ram->remainingSlots--;
+            return i;
         }
     }
+    return -1;
 }
 
-void printTLB(TLB *table){
-    for(int row = 0; row < FRAMES; row++){
-        for(int i = 0; i < 10; i++) printf("-");
-        printf("|%02d|%02d|%02d|", row, table->rows[row]->pid, table->rows[row]->pageNumber)
+void removePageFromRAM(RAM *ram, int page){
+    ram->addresses[page] = 0;
+}
+
+int isRAMFull(RAM *ram){
+    return ram->remainingSlots == 0;
+}
+
+int isWSEmpty(Process *process){
+    return process->workingSet->head == NULL;
+}
+
+void printTLB(Process *process){
+    printf("  P%d  \n",process->pid);
+    printf("-------\n");
+    for(int i = 0; i < NUM_PAGES; i++){
+        int address = process->workingSet->rows[i];
+        if(address == -1) continue;
+        printf("|%02d|%02d|\n", i, address);
+        printf("-------\n");
     }
 }

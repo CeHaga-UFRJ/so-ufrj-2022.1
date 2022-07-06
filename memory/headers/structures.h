@@ -1,28 +1,24 @@
 #ifndef __STRUCTURES_H__
 #define __STRUCTURES_H__
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #define FRAMES 64
 #define MAX_PROCESSES 20
 #define NUM_PAGES 50
 #define WORKING_SET_LIMIT 4
 
 #define PROCESS_CREATION_ERROR 2
-#define TABLE_CREATION_ERROR 3
+#define RAM_CREATION_ERROR 3
 
-typedef struct Page Page;
 typedef struct PageElement PageElement;
-typedef struct TableElement TableElement;
 typedef struct Process Process;
 typedef struct WS WS;
-typedef struct TLB TLB;
-
-struct Page{
-    int pageNumber;
-    int pid;
-};
+typedef struct RAM RAM;
 
 struct PageElement{
-    Page *page;
+    int pageNumber;
     struct PageElement *prev;
     struct PageElement *next;
 };
@@ -40,19 +36,23 @@ struct WS{
     PageElement *head;
     PageElement *tail;
     int remainingSlots;
+    int rows[NUM_PAGES];
 };
 
-struct TLB{
-    Page* rows[FRAMES];
+struct RAM{
+    int addresses[FRAMES];
     int remainingSlots;
 };
 
-extern Page* readPageFromWorkingSet(Process *process, int pageNumber);
-extern void removeProcessFromTLB(TLB *table, int pid);
+extern int readPageFromWorkingSet(Process *process, int pageNumber);
 extern Process* createProcess(int pid);
-extern TLB* createTable();
-extern Page* addPageToWorkingSet(Process *process, int pageNumber);
-extern void removeLeastUsedPage(Process *process);
-extern void addPageToTLB(TLB *table, Page *addedPage);
+extern RAM* createRam();
+extern void addPageToWorkingSet(Process *process, int pageNumber, int address);
+extern int removeLeastUsedPage(Process *process);
+extern void removePageFromRAM(RAM *ram, int page);
+extern int addPageToRAM(RAM *ram);
+extern int isRAMFull(RAM *ram);
+extern int isWSEmpty(Process *process);
+extern void printTLB(Process *process);
 
 #endif
