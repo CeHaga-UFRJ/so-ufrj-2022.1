@@ -2,6 +2,12 @@
 #define __STRUCTURES_H__
 
 #define FRAMES 64
+#define MAX_PROCESSES 20
+#define NUM_PAGES 50
+#define WORKING_SET_LIMIT 4
+
+#define PROCESS_CREATION_ERROR 2
+#define TABLE_CREATION_ERROR 3
 
 typedef struct Page Page;
 typedef struct PageElement PageElement;
@@ -16,7 +22,7 @@ struct Page{
 };
 
 struct PageElement{
-    Page page;
+    Page *page;
     struct PageElement *prev;
     struct PageElement *next;
 };
@@ -27,17 +33,26 @@ struct Process{
     int status;
     int priority;
 
-    WS workingSet;
+    WS *workingSet;
 };
 
 struct WS{
     PageElement *head;
     PageElement *tail;
-    int totalPages;
+    int remainingSlots;
 };
 
 struct TLB{
     Page* rows[FRAMES];
+    int remainingSlots;
 };
+
+extern Page* readPageFromWorkingSet(Process *process, int pageNumber);
+extern void removeProcessFromTLB(TLB *table, int pid);
+extern Process* createProcess(int pid);
+extern TLB* createTable();
+extern Page* addPageToWorkingSet(Process *process, int pageNumber);
+extern void removeLeastUsedPage(Process *process);
+extern void addPageToTLB(TLB *table, Page *addedPage);
 
 #endif
