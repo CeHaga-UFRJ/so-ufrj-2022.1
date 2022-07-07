@@ -4,7 +4,7 @@ int readPageFromWorkingSet(Process *process, int pageNumber);
 Process* createProcess(int pid);
 RAM* createRam();
 void addPageToWorkingSet(Process *process, int pageNumber, int address);
-int removeLeastUsedPage(Process *process);
+PageValues removeLeastUsedPage(Process *process);
 void removePageFromRAM(RAM *ram, int page);
 int addPageToRAM(RAM *ram);
 int isRAMFull(RAM *ram);
@@ -74,16 +74,23 @@ void cleanWorkingSetList(WS* workingSet) {
     * Descricao: Remove a pagina menos recentemente usada do WS do processo 
     * Parametros: O processo 
 */
-int removeLeastUsedPage(Process *process){
+PageValues removeLeastUsedPage(Process *process){
     int page = process->workingSet->head->pageNumber;
+    int address = process->workingSet->rows[page];
+
+    PageValues pv;
+    pv.address = address;
+    pv.page = page;
     
+    PageElement *aux = process->workingSet->head;
     process->workingSet->head = process->workingSet->head->next;
-    process->workingSet->head->prev = NULL;
+    free(aux);
+    if(process->workingSet->head) process->workingSet->head->prev = NULL;
     process->workingSet->remainingSlots++;
 
     process->workingSet->rows[page] = -1;
 
-    return page;
+    return pv;
 }
 
 // TO-DO
@@ -158,6 +165,7 @@ int addPageToRAM(RAM *ram){
 
 void removePageFromRAM(RAM *ram, int page){
     ram->addresses[page] = 0;
+    ram->remainingSlots++;
 }
 
 int isRAMFull(RAM *ram){
@@ -169,7 +177,8 @@ int isWSEmpty(Process *process){
 }
 
 void printTLB(Process *process){
-    printf("  P%d  \n",process->pid);
+    printf("-------\n");
+    printf("| P%-2d |\n",process->pid);
     printf("-------\n");
     for(int i = 0; i < NUM_PAGES; i++){
         int address = process->workingSet->rows[i];

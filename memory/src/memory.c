@@ -18,9 +18,10 @@ int main(){
     srand(time(NULL));
 
     ram = createRam();
-    
+    int count = 0;
     while(1){
         for(int i = 0; i < activeProcesses; i++){
+            if(count++ == STOPPING_LIMIT) exit(1);
             int requestedPage = requestPage();
             printf("? Processo %d solicitando pagina %d\n", i, requestedPage);
 
@@ -45,7 +46,7 @@ int main(){
 
             printTLB(processes[activeProcesses - 1]);
         }
-        sleep(3);
+        sleep(WAIT_TIME);
     }
     return 0;
 }
@@ -56,20 +57,20 @@ int requestPage(){
 
 void pageFault(Process *process, int pageNumber){
     if(process->workingSet->remainingSlots == 0){
-        int leastUsedPage = removeLeastUsedPage(process);
-        removePageFromRAM(ram, leastUsedPage);
+        PageValues pv = removeLeastUsedPage(process);
+        removePageFromRAM(ram, pv.address);
 
         int address = addPageToRAM(ram);
         addPageToWorkingSet(process, pageNumber, address);
 
-        printf("X Pagina %d removida. Pagina %d sera adicionada no endereco %d\n", leastUsedPage, pageNumber, address);
+        printf("X Pagina %d removida. Pagina %d sera adicionada no endereco %d\n", pv.page, pageNumber, address);
     }else{
         if(isRAMFull(ram)){
             int oldestPid = getOldestProcess();
             Process *oldestProcess = processes[oldestPid];
             while(!isWSEmpty(oldestProcess)){
-                int removePage = removeLeastUsedPage(oldestProcess);
-                removePageFromRAM(ram, removePage);
+                PageValues pv = removeLeastUsedPage(oldestProcess);
+                removePageFromRAM(ram, pv.address);
             }
             printf("! Memoria principal cheia, o processo %d sera removido\n", oldestPid);
         }
