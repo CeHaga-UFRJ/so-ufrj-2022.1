@@ -1,7 +1,0 @@
-{
-  "files.associations": {
-    "structures.h": "c",
-    "globals.h": "c",
-    "memory_arguments.h": "c"
-  }
-}
