@@ -1,7 +1,5 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include "../headers/globals.h"
+#include "../headers/memory_arguments.h"
 #include "../headers/structures.h"
 
 int requestPage();
@@ -14,14 +12,16 @@ int lastProcessRemoved = 0;
 Process* processes[MAX_PROCESSES];
 RAM *ram;
 
-int main(){
+int main(int argc, char *argv[]){
     srand(time(NULL));
+
+    readArgumentsFromConsole(argc, argv);
 
     ram = createRam();
     int count = 0;
     while(1){
+        if(STOPPING_LIMIT != -1 && count++ >= STOPPING_LIMIT) exitProgram(COUNTER_END, "Contador chegou ao final");
         for(int i = 0; i < activeProcesses; i++){
-            if(count++ == STOPPING_LIMIT) exit(1);
             int requestedPage = requestPage();
             printf("? Processo %d solicitando pagina %d\n", i, requestedPage);
 
@@ -34,7 +34,7 @@ int main(){
             }
             printTLB(processes[i]);
         }
-        if(activeProcesses < MAX_PROCESSES) {
+        if(activeProcesses < PROCESSES) {
             processes[activeProcesses] = createProcess(activeProcesses);
 
             int requestedPage = requestPage();
@@ -42,9 +42,9 @@ int main(){
 
             pageFault(processes[activeProcesses], requestedPage);
 
-            activeProcesses++;
+            printTLB(processes[activeProcesses]);
 
-            printTLB(processes[activeProcesses - 1]);
+            activeProcesses++;
         }
         sleep(WAIT_TIME);
     }
@@ -63,7 +63,7 @@ void pageFault(Process *process, int pageNumber){
         int address = addPageToRAM(ram);
         addPageToWorkingSet(process, pageNumber, address);
 
-        printf("X Pagina %d removida. Pagina %d sera adicionada no endereco %d\n", pv.page, pageNumber, address);
+        printf("X Pagina %d removida. Pagina %d foi adicionada no endereco %d\n", pv.page, pageNumber, address);
     }else{
         if(isRAMFull(ram)){
             int oldestPid = getOldestProcess();
@@ -72,7 +72,7 @@ void pageFault(Process *process, int pageNumber){
                 PageValues pv = removeLeastUsedPage(oldestProcess);
                 removePageFromRAM(ram, pv.address);
             }
-            printf("! Memoria principal cheia, o processo %d sera removido\n", oldestPid);
+            printf("! Memoria principal cheia, o processo %d foi removido\n", oldestPid);
         }
         int address = addPageToRAM(ram);
         addPageToWorkingSet(process, pageNumber, address);

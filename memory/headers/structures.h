@@ -1,18 +1,8 @@
 #ifndef __STRUCTURES_H__
 #define __STRUCTURES_H__
 
-#include <stdlib.h>
-#include <stdio.h>
-
-#define FRAMES 64
-#define MAX_PROCESSES 20
-#define NUM_PAGES 50
-#define WORKING_SET_LIMIT 4
-#define WAIT_TIME 3
-#define STOPPING_LIMIT 100
-
-#define PROCESS_CREATION_ERROR 2
-#define RAM_CREATION_ERROR 3
+#include "../headers/globals.h"
+#include "../headers/memory_arguments.h"
 
 typedef struct PageElement PageElement;
 typedef struct Process Process;
@@ -39,11 +29,11 @@ struct WS{
     PageElement *head;
     PageElement *tail;
     int remainingSlots;
-    int rows[NUM_PAGES];
+    int rows[MAX_PAGES];
 };
 
 struct RAM{
-    int addresses[FRAMES];
+    int addresses[MAX_FRAMES];
     int remainingSlots;
 };
 

@@ -140,8 +140,13 @@ int readPageFromWorkingSet(Process *process, int pageNumber){
             else process->workingSet->tail = process->workingSet->tail->prev;
 
             // Adiciona no final
-            process->workingSet->tail->next = element;
-            element->prev = process->workingSet->tail;
+            if(process->workingSet->head == NULL){
+                process->workingSet->head = element;
+                element->prev = NULL;
+            }else{
+                process->workingSet->tail->next = element;
+                element->prev = process->workingSet->tail;
+            }
             element->next = NULL;
             process->workingSet->tail = element;
 
