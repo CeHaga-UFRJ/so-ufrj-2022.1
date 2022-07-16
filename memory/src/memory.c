@@ -55,6 +55,12 @@ int requestPage(){
     return rand() % NUM_PAGES;
 }
 
+/**
+ * @brief Realiza a adicao de pagina na memoria
+ * 
+ * @param process Processo que teve Page Fault
+ * @param pageNumber Numero da pagina requisitada
+ */
 void pageFault(Process *process, int pageNumber){
     if(process->workingSet->remainingSlots == 0){
         PageValues pv = removeLeastUsedPage(process);

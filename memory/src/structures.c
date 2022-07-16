@@ -11,6 +11,12 @@ int isRAMFull(RAM *ram);
 int isWSEmpty(Process *process);
 void printTLB(Process *process);
 
+/**
+ * @brief Cria um processo
+ * 
+ * @param pid Id do processo
+ * @return Process* Processo criado
+ */
 Process* createProcess(int pid){
     Process *process = (Process *)malloc(sizeof(Process));
     if(process == NULL){
@@ -31,11 +37,15 @@ Process* createProcess(int pid){
     for(int i = 0; i < NUM_PAGES; i++){
         process->workingSet->rows[i] = -1;
     }
-    // cleanWorkingSetList(process->workingSet);
 
     return process;
 }
 
+/**
+ * @brief Cria vetor de memória principal
+ * 
+ * @return RAM* Vetor de memória
+ */
 RAM* createRam(){
     RAM* ram = (RAM *)malloc(sizeof(RAM));
 
@@ -51,29 +61,12 @@ RAM* createRam(){
     return ram;
 }
 
-void cleanWorkingSet(Process *process){
-    process->workingSet->remainingSlots = WORKING_SET_LIMIT;
-    PageElement *element = process->workingSet->head;
-
-    while(element->next != NULL){
-        element = element->next;
-        free(element->prev);
-    }
-    free(element);
-
-    process->workingSet->head = NULL;
-    process->workingSet->tail = NULL;
-    // cleanWorkingSetList(process->workingSet);
-}
-
-void cleanWorkingSetList(WS* workingSet) {
-    workingSet->head = workingSet->tail = NULL;
-}
-
-/* 
-    * Descricao: Remove a pagina menos recentemente usada do WS do processo 
-    * Parametros: O processo 
-*/
+/**
+ * @brief Remove a pagina menos recentemente usada do WS do processo
+ * 
+ * @param process Processo
+ * @return PageValues Endereco e pagina virtual da pagina removida
+ */
 PageValues removeLeastUsedPage(Process *process){
     int page = process->workingSet->head->pageNumber;
     int address = process->workingSet->rows[page];
@@ -93,14 +86,13 @@ PageValues removeLeastUsedPage(Process *process){
     return pv;
 }
 
-// TO-DO
-// Da ruim ao adicionar no inicio
-
-/* 
-    * Descricao: Adiciona uma pagina do working set do processo
-    * Parametros: O processo e o numero da pagina desejada para adicao
-    * Retorno: A pagina adicionada no WS do processo
-*/
+/**
+ * @brief Adiciona uma pagina do working set do processo
+ * 
+ * @param process Processo
+ * @param pageNumber Numero da pagina a ser adicionada
+ * @param address Endereco a ser adicionado
+ */
 void addPageToWorkingSet(Process *process, int pageNumber, int address){
     if(process->workingSet->head == NULL){
         process->workingSet->head = (PageElement *)malloc(sizeof(PageElement));
@@ -120,14 +112,13 @@ void addPageToWorkingSet(Process *process, int pageNumber, int address){
     process->workingSet->rows[pageNumber] = address;
 }
 
-// TODO
-// Verificar se faz sentido nos casos extremos
-
-/* 
-    * Descricao: Le uma pagina do working set do processo
-    * Parametros: O processo e o numero da pagina desejada para leitura
-    * Retorno: Retorna a pagina caso ela exista no WS ou null caso contrario
-*/
+/**
+ * @brief Le uma pagina do working set do processo
+ * 
+ * @param process Processo
+ * @param pageNumber Numero da pagina a ser lida
+ * @return int Endereco da pagina lida ou -1 se pagina nao encontrada
+ */
 int readPageFromWorkingSet(Process *process, int pageNumber){
     PageElement *element = process->workingSet->head;
     while(element != NULL){

@@ -71,6 +71,9 @@ void readArgumentsFromConsole(int argc, char *argv[]){
     }
 }
 
+/**
+ * Getters para constantes
+ */
 int getFrames(){
     return frames;
 }
