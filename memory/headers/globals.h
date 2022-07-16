@@ -11,15 +11,15 @@
 #define MAX_PAGES 64
 
 #define HELP_TEXT \
-"Simula o funcionamento de um gerenciador de memoria\n\
+"Simula o funcionamento de um gerenciador de memoria virtual com algoritmo LRU\n\
 Para execuder rode:\n\
-\t memory [-f#] [-p#] [-v#] [-w#] [-s#] [-l#]\n\
+\t [executavel] [-f#] [-p#] [-v#] [-w#] [-s#] [-l#]\n\
 \n\
 \tf\t: Quantidade de frames na memoria principal\n\
 \tp\t: Quantidade de processos\n\
-\tv\t: Quantidade de paginas em cada processo\n\
+\tv\t: Quantidade de paginas virtuais em cada processo\n\
 \tw\t: Limite do working set\n\
-\ts\t: Tempo de espera entre ciclos\n\
+\ts\t: Tempo de espera entre ciclos em segundos\n\
 \tl\t: Quantidade maxima de ciclos\n\
 "
 
